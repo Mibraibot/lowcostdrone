@@ -6,6 +6,8 @@ import DashboardNavbar from "@/components/sections/DashboardNavbar";
 import OverviewPanel from "@/components/sections/panels/OverviewPanel";
 import AlertsPanel from "@/components/sections/panels/AlertsPanel";
 import SettingsPanel from "@/components/sections/panels/SettingsPanel";
+import "leaflet/dist/leaflet.css";
+
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("overview");
