@@ -1,13 +1,24 @@
-import Card from "@/components/ui/Card";
-import "./globals.css";
+"use client";
+
+import { useState } from "react";
+import DashboardStats from "@/components/sections/DashboardStats";
+import DashboardNavbar from "@/components/sections/DashboardNavbar";
+import OverviewPanel from "@/components/sections/panels/OverviewPanel";
+import AlertsPanel from "@/components/sections/panels/AlertsPanel";
+import SettingsPanel from "@/components/sections/panels/SettingsPanel";
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState("overview");
+
   return (
-    <div className="p-6 flex gap-4 flex-wrap">
-      <Card title="Overview" value={120} />
-      <Card title="Alerts" value={5} />
-      <Card title="Settings" value={3} />
-      <Card title="Teritorial Status" value={3} />
+    <div className="p-6">
+      <DashboardStats />
+
+      <DashboardNavbar active={activeTab} onChange={setActiveTab} />
+
+      {activeTab === "overview" && <OverviewPanel />}
+      {activeTab === "alerts" && <AlertsPanel />}
+      {activeTab === "settings" && <SettingsPanel />}
     </div>
   );
 }
