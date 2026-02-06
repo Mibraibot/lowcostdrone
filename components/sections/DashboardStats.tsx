@@ -24,11 +24,14 @@ import { createPortal } from "react-dom";
 const geocodeCache = new Map<string, string>();
 
 // Debounce helper untuk mencegah spam request saat mouse jitter
-function useDebouncedCallback<T extends (...args: any[]) => void>(fn: T, delay = 250) {
+function useDebouncedCallback<T extends (...args: unknown[]) => void>(
+  fn: T,
+  delay = 250
+) {
   const t = useRef<ReturnType<typeof setTimeout> | null>(null);
   return (...args: Parameters<T>) => {
     if (t.current) clearTimeout(t.current);
-    t.current = setTimeout(() => fn(...args), delay);
+    t.current = setTimeout(() => fn(...(args as Parameters<T>)), delay);
   };
 }
 
@@ -78,8 +81,9 @@ function useReverseGeocodeOnHover(lat: number, lon: number) {
     try {
       const result = await reverseGeocode(lat, lon);
       setAddress(result);
-    } catch (e: any) {
-      setErr(e?.message || "Gagal mengambil alamat");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Gagal mengambil alamat";
+      setErr(msg);
     } finally {
       setLoading(false);
     }
@@ -109,15 +113,20 @@ function TooltipPortal({
 }) {
   const tooltipRef = useRef<HTMLDivElement | null>(null);
 
+  // Gunakan state untuk container portal agar tidak membaca ref saat render
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
+    null
+  );
+
   // Buat node container untuk portal (sekali saja)
-  const portalRootRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     const el = document.createElement("div");
     el.setAttribute("data-portal", "latlon-tooltip");
     document.body.appendChild(el);
-    portalRootRef.current = el;
+    setPortalContainer(el);
     return () => {
       document.body.removeChild(el);
+      setPortalContainer(null);
     };
   }, []);
 
@@ -125,9 +134,13 @@ function TooltipPortal({
   useLayoutEffect(() => {
     if (!open || !anchorEl || !tooltipRef.current) return;
 
+    const anchor = anchorEl; // Narrow sekali agar TS paham non-null di closure
+    const tt = tooltipRef.current;
+
     function place() {
-      const a = anchorEl.getBoundingClientRect();
-      const tt = tooltipRef.current!;
+      if (!anchor || !tt) return;
+
+      const a = anchor.getBoundingClientRect();
       const vw = window.innerWidth;
       const vh = window.innerHeight;
 
@@ -183,7 +196,7 @@ function TooltipPortal({
     let ro: ResizeObserver | null = null;
     if ("ResizeObserver" in window) {
       ro = new ResizeObserver(place);
-      ro.observe(anchorEl);
+      ro.observe(anchor);
     }
 
     return () => {
@@ -193,7 +206,7 @@ function TooltipPortal({
     };
   }, [open, anchorEl, offset]);
 
-  if (!open || !portalRootRef.current) return null;
+  if (!open || !portalContainer) return null;
 
   return createPortal(
     <div
@@ -207,7 +220,7 @@ function TooltipPortal({
     >
       {children}
     </div>,
-    portalRootRef.current
+    portalContainer
   );
 }
 
@@ -230,12 +243,14 @@ function HoverableLatLon({
     lon
   );
   const fmt = useMemo(() => `${lat.toFixed(4)}, ${lon.toFixed(4)}`, [lat, lon]);
-  const anchorRef = useRef<HTMLSpanElement | null>(null);
+
+  // Hindari membaca ref.current saat render: gunakan callback ref ke state
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
   return (
     <>
       <span
-        ref={anchorRef}
+        ref={setAnchorEl}
         className={
           "relative group cursor-help text-slate-300 hover:text-emerald-300 transition-colors " +
           (inline ? "inline-block" : "block")
@@ -255,7 +270,7 @@ function HoverableLatLon({
         {fmt}
       </span>
 
-      <TooltipPortal open={open} anchorEl={anchorRef.current}>
+      <TooltipPortal open={open} anchorEl={anchorEl}>
         <div className="flex items-start gap-2">
           <MapPin className="w-3.5 h-3.5 text-emerald-400 mt-[1px]" />
           <div className="space-y-0.5">
@@ -282,13 +297,13 @@ function HoverableLatLon({
 
 /* ------------------------------ MAIN WIDGET ------------------------------- */
 
+type RfStatus = "safe" | "warning" | "critical";
+
 export default function DashboardStats() {
   const [mounted, setMounted] = useState(false);
 
   // Simulasi status RF
-  const [rfStatus, setRfStatus] = useState<"safe" | "warning" | "critical">(
-    "warning"
-  );
+  const [rfStatus, setRfStatus] = useState<RfStatus>("warning");
   const [detectedSignals, setDetectedSignals] = useState(12); // Jumlah sinyal terdeteksi
 
   useEffect(() => {
@@ -393,7 +408,7 @@ export default function DashboardStats() {
             <div className="leading-tight font-mono">
               <div className="text-slate-500">Location</div>
               <div className="text-slate-300">
-                {/* Ganti teks statis dengan komponen hoverable */}
+                {/* Koordinat yang bisa di-hover */}
                 <HoverableLatLon lat={-6.9147} lon={107.6098} inline />
               </div>
             </div>
@@ -473,7 +488,7 @@ export default function DashboardStats() {
             GPS Status
           </div>
 
-          <div className="text-xl font-bold text-blue-400 mb-1">ACTIVE</div>
+        <div className="text-xl font-bold text-blue-400 mb-1">ACTIVE</div>
 
           {/* Daftar node + koord yang bisa di-hover */}
           <div className="space-y-1 text-[10px] font-mono text-slate-400">
