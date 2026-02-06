@@ -3,6 +3,41 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes warningBlink {
+  0% {
+    background-color: rgba(234, 179, 8, 0.15); /* yellow-400 */
+    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.6);
+  }
+  50% {
+    background-color: rgba(234, 179, 8, 0.35);
+    box-shadow: 0 0 12px 4px rgba(234, 179, 8, 0.6);
+  }
+  100% {
+    background-color: rgba(234, 179, 8, 0.15);
+    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.6);
+  }
+}
+
+@keyframes criticalPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.9);
+  }
+  70% {
+    box-shadow: 0 0 0 16px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.alert-warning {
+  animation: warningBlink 1.3s infinite;
+}
+
+.alert-critical {
+  animation: criticalPulse 0.7s infinite;
+}
+
 
 
 /* :root dan @theme tetap boleh ada kalau mau untuk variable */

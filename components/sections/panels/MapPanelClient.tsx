@@ -75,20 +75,7 @@ export default function MapPanelClient() {
         {/* ===============================
             HOME BASE MARKER
         =============================== */}
-        <Marker position={center} icon={homeBaseIcon}>
-          <Popup>
-            <div className="text-sm text-slate-200">
-              <div className="font-semibold text-cyan-400 mb-1">
-                HOME BASE
-              </div>
-              <div>Lat: -6.2000</div>
-              <div>Lng: 106.8166</div>
-              <div className="text-xs text-green-400 mt-2">
-                ● STATUS: ACTIVE
-              </div>
-            </div>
-          </Popup>
-        </Marker>
+    
       </MapContainer>
     </div>
   );
