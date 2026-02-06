@@ -1,3 +1,5 @@
+"use client";
+
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 import { getAnalytics, isSupported } from "firebase/analytics";
