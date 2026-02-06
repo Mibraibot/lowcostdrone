@@ -123,7 +123,7 @@ function TooltipPortal({
     const el = document.createElement("div");
     el.setAttribute("data-portal", "latlon-tooltip");
     document.body.appendChild(el);
-    setPortalContainer(el);
+
     return () => {
       document.body.removeChild(el);
       setPortalContainer(null);
@@ -132,79 +132,77 @@ function TooltipPortal({
 
   // Posisi ulang tooltip saat open/scroll/resize
   useLayoutEffect(() => {
-    if (!open || !anchorEl || !tooltipRef.current) return;
+  if (!open) return;
 
-    const anchor = anchorEl; // Narrow sekali agar TS paham non-null di closure
+  function place() {
+    const anchor = anchorEl;
     const tt = tooltipRef.current;
+    if (!anchor || !tt) return;
 
-    function place() {
-      if (!anchor || !tt) return;
+    const a = anchor.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
 
-      const a = anchor.getBoundingClientRect();
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
+    // Default: di atas tengah anchor
+    const prefX = a.left + a.width / 2;
+    const prefY = a.top - offset;
 
-      // Default: di atas tengah anchor
-      const prefX = a.left + a.width / 2;
-      const prefY = a.top - offset;
+    // Siapkan untuk ukur ukuran tooltip
+    tt.style.visibility = "hidden";
+    tt.style.left = "0px";
+    tt.style.top = "0px";
+    tt.style.maxWidth = "280px";
+    tt.style.position = "fixed";
+    tt.style.pointerEvents = "none";
+    tt.style.zIndex = "9999";
 
-      // Siapkan untuk ukur ukuran tooltip
-      tt.style.visibility = "hidden";
-      tt.style.left = "0px";
-      tt.style.top = "0px";
-      tt.style.maxWidth = "280px";
-      tt.style.position = "fixed";
-      tt.style.pointerEvents = "none";
-      tt.style.zIndex = "9999";
+    const { width: tw, height: th } = tt.getBoundingClientRect();
 
-      const { width: tw, height: th } = tt.getBoundingClientRect();
+    let left = Math.round(prefX - tw / 2);
+    let top = Math.round(prefY - th);
 
-      let left = Math.round(prefX - tw / 2);
-      let top = Math.round(prefY - th);
-
-      // Flip ke bawah jika tidak cukup ruang di atas
-      const hasRoomTop = a.top >= th + offset + 8;
-      if (!hasRoomTop) {
-        top = Math.round(a.bottom + offset);
-      }
-
-      // Clamp horizontal agar tidak spill di kiri/kanan layar
-      const margin = 8;
-      left = Math.min(Math.max(margin, left), vw - tw - margin);
-
-      // Jika overflow bawah layar, paksa pos di atas
-      if (top + th + margin > vh) {
-        top = Math.round(a.top - th - offset);
-      }
-      // Jika masih overflow atas, clamp minimal margin
-      if (top < margin) top = margin;
-
-      tt.style.left = `${left}px`;
-      tt.style.top = `${top}px`;
-      tt.style.visibility = "visible";
+    // Flip ke bawah jika tidak cukup ruang di atas
+    const hasRoomTop = a.top >= th + offset + 8;
+    if (!hasRoomTop) {
+      top = Math.round(a.bottom + offset);
     }
 
-    place();
+    // Clamp horizontal
+    const margin = 8;
+    left = Math.min(Math.max(margin, left), vw - tw - margin);
 
-    const onScroll = () => place();
-    const onResize = () => place();
-
-    window.addEventListener("scroll", onScroll, true);
-    window.addEventListener("resize", onResize);
-
-    // Reposition jika ukuran/posisi anchor berubah
-    let ro: ResizeObserver | null = null;
-    if ("ResizeObserver" in window) {
-      ro = new ResizeObserver(place);
-      ro.observe(anchor);
+    // Clamp vertical
+    if (top + th + margin > vh) {
+      top = Math.round(a.top - th - offset);
     }
+    if (top < margin) top = margin;
 
-    return () => {
-      window.removeEventListener("scroll", onScroll, true);
-      window.removeEventListener("resize", onResize);
-      if (ro) ro.disconnect();
-    };
-  }, [open, anchorEl, offset]);
+    tt.style.left = `${left}px`;
+    tt.style.top = `${top}px`;
+    tt.style.visibility = "visible";
+  }
+
+  place();
+
+  const onScroll = () => place();
+  const onResize = () => place();
+
+  window.addEventListener("scroll", onScroll, true);
+  window.addEventListener("resize", onResize);
+
+  let ro: ResizeObserver | null = null;
+  if (anchorEl && "ResizeObserver" in window) {
+    ro = new ResizeObserver(place);
+    ro.observe(anchorEl);
+  }
+
+  return () => {
+    window.removeEventListener("scroll", onScroll, true);
+    window.removeEventListener("resize", onResize);
+    if (ro) ro.disconnect();
+  };
+}, [open, anchorEl, offset]);
+
 
   if (!open || !portalContainer) return null;
 
