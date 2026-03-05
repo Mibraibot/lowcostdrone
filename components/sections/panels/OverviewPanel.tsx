@@ -3,18 +3,17 @@
 import MapPanel from "@/components/sections/panels/MapPanel";
 import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
 import { threatConfig, ThreatLevel } from "@/utils/threat";
+import { useAlertAudio } from "@/context/AlertAudioProvider";
 
 export default function OverviewPanel() {
   const { nodes, loading } = useRealtimeNodes();
+  const { toggleMute, mutedNodes } = useAlertAudio();
 
   return (
     <div className="mt-6 grid grid-cols-3 gap-6">
       {/* MAP */}
       <div className="col-span-2 bg-[#151b2d] rounded-xl p-4 h-[700px]">
-        <h3 className="mb-3 text-slate-300 font-semibold">
-          Fleet Locations
-        </h3>
-
+        <h3 className="mb-3 text-slate-300 font-semibold">Fleet Locations</h3>
         <div className="h-[600px]">
           <MapPanel />
         </div>
@@ -23,26 +22,21 @@ export default function OverviewPanel() {
       {/* ALERTS */}
       <div className="bg-[#151b2d] rounded-xl p-4 h-[480px] flex flex-col">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-slate-200 font-semibold">
-            Real-time Alerts
-          </h3>
-          <span className="text-xs text-slate-400">
-            2.4 GHz Monitor
-          </span>
+          <h3 className="text-slate-200 font-semibold">Real-time Alerts</h3>
+          <span className="text-xs text-slate-400">2.4 GHz Monitor</span>
         </div>
 
         <ul className="space-y-3 text-sm overflow-y-auto flex-1 pr-1">
           {loading && (
-            <li className="text-slate-400 text-xs">
-              Loading alerts...
-            </li>
+            <li className="text-slate-400 text-xs">Loading alerts...</li>
           )}
 
           {Object.entries(nodes).map(([nodeId, node]) => {
             const threatLevel = Number(node.threat) as ThreatLevel;
             const config = threatConfig[threatLevel];
-
             if (!config) return null;
+
+            const isMuted = mutedNodes[nodeId] ?? false;
 
             return (
               <li
@@ -53,7 +47,7 @@ export default function OverviewPanel() {
                   config.alertClass ?? "",
                 ].join(" ")}
               >
-                <div className="flex justify-between">
+                <div className="flex justify-between items-start">
                   <div>
                     <p className="text-slate-200 font-medium">
                       {nodeId} —{" "}
@@ -61,20 +55,26 @@ export default function OverviewPanel() {
                       {threatLevel === 2 && "Suspicious Signal"}
                       {threatLevel === 3 && "Potential Drone Detected"}
                     </p>
-
                     <p className="text-slate-400 text-xs">
                       RSSI: {node.RSSI} dBm · Packets: {node.Packet}
                     </p>
                   </div>
 
-                  <span
-                    className={[
-                      "text-xs font-semibold",
-                      config.text,
-                    ].join(" ")}
-                  >
-                    {config.label}
-                  </span>
+                  <div className="flex flex-col items-end gap-2">
+                    <span
+                      className={["text-xs font-semibold", config.text].join(" ")}
+                    >
+                      {config.label}
+                    </span>
+
+                    {/* 🔇 Tombol mute */}
+                    <button
+                      onClick={() => toggleMute(nodeId)}
+                      className="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200"
+                    >
+                      {isMuted ? "Unmute 🔊" : "Mute 🔇"}
+                    </button>
+                  </div>
                 </div>
               </li>
             );
