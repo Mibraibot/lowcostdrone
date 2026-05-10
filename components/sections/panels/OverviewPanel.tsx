@@ -4,12 +4,10 @@ import MapPanel from "@/components/sections/panels/MapPanel";
 import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
 import { usePredictionSocket } from "@/hooks/usePredictionSocket";
 import { threatConfig, ThreatLevel } from "@/utils/threat";
-import { useAlertAudio } from "@/context/AlertAudioProvider";
 
 export default function OverviewPanel() {
   const { nodes, loading } = useRealtimeNodes();
   const { latestPredictions } = usePredictionSocket();
-  const { toggleMute, mutedNodes } = useAlertAudio();
 
   return (
     <div className="mt-4 grid grid-cols-3 gap-4">
@@ -43,8 +41,6 @@ export default function OverviewPanel() {
             const config = threatConfig[threatLevel];
             if (!config) return null;
 
-            const isMuted = mutedNodes[nodeId] ?? false;
-
             return (
               <li
                 key={nodeId}
@@ -66,20 +62,12 @@ export default function OverviewPanel() {
                       Battery: {node.battery}% · Last Sync: {node.timestamp_wib}
                     </p>
                   </div>
-
                   <div className="flex flex-col items-end gap-2">
                     <span
                       className={["text-xs font-semibold", config.text].join(" ")}
                     >
                       {config.label}
                     </span>
-
-                    <button
-                      onClick={() => toggleMute(nodeId)}
-                      className="text-[10px] px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200"
-                    >
-                      {isMuted ? "Unmute 🔊" : "Mute 🔇"}
-                    </button>
                   </div>
                 </div>
               </li>
