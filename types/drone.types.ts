@@ -5,13 +5,13 @@ export type GatewayData = {
 };
 
 export type NodeData = {
-  Packet: string;
-  RSSI: string;
-  bat: string;
-  lat: string;
-  lon: string;
-  threat: number;
-  time: string;
+  rssi: number;
+  snr: number;
+  battery: number;
+  data_hex: string;
+  timestamp_wib: string;
+  captured_at?: string;
+  node?: string;
 };
 
 export type NodesMap = Record<string, NodeData>;

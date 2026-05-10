@@ -297,18 +297,41 @@ function HoverableLatLon({
 
 type RfStatus = "safe" | "warning" | "critical";
 
+import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
+import { usePredictionSocket } from "@/hooks/usePredictionSocket";
+import { useGateway } from "@/hooks/useGateway";
+
 export default function DashboardStats() {
   const [mounted, setMounted] = useState(false);
-
-  // Simulasi status RF
-  const [rfStatus, setRfStatus] = useState<RfStatus>("warning");
-  const [detectedSignals, setDetectedSignals] = useState(12); // Jumlah sinyal terdeteksi
+  const { nodes } = useRealtimeNodes();
+  const { latestPredictions } = usePredictionSocket();
+  const { gateway } = useGateway();
 
   useEffect(() => {
-    // Hindari setTimeout di render; gunakan useEffect
     const t = setTimeout(() => setMounted(true), 0);
     return () => clearTimeout(t);
   }, []);
+
+  // Determine global RF status based on latest predictions
+  const { rfStatus, detectedSignals } = useMemo(() => {
+    let maxId = 1;
+    let signals = 0;
+    
+    // Check all nodes from Firebase
+    Object.keys(nodes).forEach(nodeKey => {
+      // Prioritize live prediction from socket
+      const pred = latestPredictions[nodeKey];
+      const id = pred?.prediction_id || 1;
+      if (id > maxId) maxId = id;
+      
+      // Simulate signal count based on RSSI if available
+      const nodeData = nodes[nodeKey];
+      if (nodeData?.rssi) signals += Math.abs(nodeData.rssi) / 10;
+    });
+
+    const status: RfStatus = maxId === 3 ? "critical" : maxId === 2 ? "warning" : "safe";
+    return { rfStatus: status, detectedSignals: Math.floor(signals) || 5 };
+  }, [nodes, latestPredictions]);
 
   const rfConfig = {
     safe: {
@@ -321,7 +344,6 @@ export default function DashboardStats() {
       text: "SAFE",
       description: "No threats detected",
       barWidth: "25%",
-      signals: "0-5 signals",
     },
     warning: {
       color: "yellow",
@@ -333,7 +355,6 @@ export default function DashboardStats() {
       text: "WARNING",
       description: "Suspicious activity detected",
       barWidth: "60%",
-      signals: "6-15 signals",
     },
     critical: {
       color: "red",
@@ -343,9 +364,8 @@ export default function DashboardStats() {
       borderHover: "red-400/70",
       icon: AlertOctagon,
       text: "CRITICAL",
-      description: "Immediate action required",
+      description: "Drone detected in vicinity",
       barWidth: "95%",
-      signals: "15+ signals",
     },
   } as const;
 
@@ -356,22 +376,17 @@ export default function DashboardStats() {
     <div className="grid grid-cols-4 gap-4">
       {/* GATEWAY */}
       <div
-        className={`group relative h-[180px] flex flex-col justify-between
+        className={`group relative h-[150px] flex flex-col justify-between
   bg-gradient-to-br from-[#1a2332] to-[#0f1419]
   rounded-2xl p-3 border border-emerald-500/30
   hover:border-emerald-400/60 transition-all duration-500 overflow-hidden
   ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
       >
-        {/* Hover Glow */}
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-        {/* Status Dot */}
         <div className="absolute top-3 right-3">
           <span className="absolute inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75 animate-ping" />
           <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
         </div>
-
-        {/* HEADER */}
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
@@ -382,37 +397,30 @@ export default function DashboardStats() {
             </div>
             <Signal className="w-3 h-3 text-emerald-400 animate-pulse" />
           </div>
-
-          {/* STATUS */}
           <div className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">
             ONLINE
           </div>
-
-          {/* UPTIME BAR */}
           <div className="mt-1 h-1 bg-slate-800 rounded-full overflow-hidden">
             <div className="h-full w-full bg-gradient-to-r from-emerald-500 to-green-400 animate-pulse" />
           </div>
-
           <div className="text-[10px] text-slate-500 mt-1">
             Main gateway • 99.9% uptime
           </div>
         </div>
-
-        {/* EXTRA INFO */}
         <div className="relative z-10 grid grid-cols-2 gap-2 text-[10px] mt-2">
-          {/* LOCATION */}
           <div className="flex items-start gap-1.5 text-slate-400">
             <MapPin className="w-3.5 h-3.5 text-emerald-400 mt-[1px]" />
             <div className="leading-tight font-mono">
               <div className="text-slate-500">Location</div>
               <div className="text-slate-300">
-                {/* Koordinat yang bisa di-hover */}
-                <HoverableLatLon lat={-6.9147} lon={107.6098} inline />
+                <HoverableLatLon 
+                  lat={gateway?.lat || -6.9147} 
+                  lon={gateway?.lon || 107.6098} 
+                  inline 
+                />
               </div>
             </div>
           </div>
-
-          {/* NETWORK */}
           <div className="flex items-start gap-1.5 text-slate-400">
             <Wifi className="w-3.5 h-3.5 text-emerald-400 mt-[1px]" />
             <div className="leading-tight">
@@ -427,7 +435,7 @@ export default function DashboardStats() {
 
       {/* ACTIVE NODES */}
       <div
-        className={`group relative h-[180px] flex flex-col justify-between
+        className={`group relative h-[150px] flex flex-col justify-between
         bg-gradient-to-br from-[#1a2332] to-[#0f1419]
         rounded-2xl p-3 border border-slate-700/50
         hover:border-slate-600 transition-all duration-500 overflow-hidden
@@ -436,45 +444,44 @@ export default function DashboardStats() {
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
             <BatteryFull className="w-3 h-3" />
-            Active Nodes
+            Node Status (Live)
           </div>
-
-          <div className="text-xl font-bold text-slate-200 mb-1">3 / 3</div>
-
+          <div className="text-xl font-bold text-slate-200 mb-1">
+            {Object.keys(nodes).length} / 3
+          </div>
           <div className="space-y-1">
-            {[
-              { name: "Node 1", battery: 92, color: "emerald" },
-              { name: "Node 2", battery: 67, color: "yellow" },
-              { name: "Node 3", battery: 41, color: "red" },
-            ].map((n, i) => (
-              <div key={i}>
-                <div className="flex justify-between text-[10px]">
-                  <span className="text-slate-400">{n.name}</span>
-                  <span className={`text-${n.color}-400 font-semibold`}>
-                    {n.battery}%
-                  </span>
+            {Object.entries(nodes).map(([nodeKey, nodeData]) => {
+              const livePred = latestPredictions[nodeKey];
+              const battery = nodeData.battery || 0;
+              const color = battery > 70 ? "emerald" : battery > 30 ? "yellow" : "red";
+              const label = livePred?.prediction_label || "No Prediction";
+              
+              return (
+                <div key={nodeKey}>
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-slate-400 uppercase font-mono">{nodeKey} • <span className="text-cyan-400">{label}</span></span>
+                    <span className={`text-${color}-400 font-semibold`}>
+                      {battery}%
+                    </span>
+                  </div>
+                  <div className="h-1 bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${
+                        color === "emerald" ? "bg-emerald-500" : color === "yellow" ? "bg-yellow-500" : "bg-red-500"
+                      }`}
+                      style={{ width: `${battery}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="h-1 bg-slate-700 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${
-                      n.color === "emerald"
-                        ? "bg-emerald-500"
-                        : n.color === "yellow"
-                        ? "bg-yellow-500"
-                        : "bg-red-500"
-                    }`}
-                    style={{ width: `${n.battery}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
 
       {/* GPS */}
       <div
-        className={`group relative h-[180px] flex flex-col justify-between
+        className={`group relative h-[150px] flex flex-col justify-between
         bg-gradient-to-br from-[#1a2332] to-[#0f1419]
         rounded-2xl p-3 border border-slate-700/50
         hover:border-blue-500/40 transition-all duration-500 overflow-hidden
@@ -485,30 +492,23 @@ export default function DashboardStats() {
             <MapPin className="w-3 h-3 text-blue-400" />
             GPS Status
           </div>
-
-        <div className="text-xl font-bold text-blue-400 mb-1">ACTIVE</div>
-
-          {/* Daftar node + koord yang bisa di-hover */}
+          <div className="text-xl font-bold text-blue-400 mb-1 uppercase">Active</div>
           <div className="space-y-1 text-[10px] font-mono text-slate-400">
-            <div className="flex gap-1 items-center">
-              <span>Node 1 ·</span>
-              <HoverableLatLon lat={-6.9147} lon={107.6098} />
-            </div>
-            <div className="flex gap-1 items-center">
-              <span>Node 2 ·</span>
-              <HoverableLatLon lat={-6.9152} lon={107.6103} />
-            </div>
-            <div className="flex gap-1 items-center">
-              <span>Node 3 ·</span>
-              <HoverableLatLon lat={-6.9161} lon={107.611} />
-            </div>
+            {gateway?.nodes ? Object.entries(gateway.nodes).map(([nodeKey, coords]) => (
+              <div key={nodeKey} className="flex gap-1 items-center">
+                <span className="capitalize">{nodeKey.replace('_', ' ')} ·</span>
+                <HoverableLatLon lat={coords.lat} lon={coords.lon} />
+              </div>
+            )) : (
+              <div className="text-slate-500 italic">No nodes configured</div>
+            )}
           </div>
         </div>
       </div>
 
       {/* RF COVERAGE - Dynamic Status */}
       <div
-        className={`group relative h-[180px] flex flex-col justify-between
+        className={`group relative h-[150px] flex flex-col justify-between
         bg-gradient-to-br rounded-2xl p-3 border-2
         transition-all duration-500 overflow-hidden
         ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
@@ -517,115 +517,42 @@ export default function DashboardStats() {
           borderColor: "rgba(0,0,0,0.2)",
         }}
       >
-        {/* Animated background glow */}
-        <div
-          className={`absolute inset-0 bg-gradient-to-br from-${currentStatus.color}-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`}
-        />
-
-        {/* Radar ping animation */}
+        <div className={`absolute inset-0 bg-gradient-to-br from-${currentStatus.color}-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 pointer-events-none">
-          <div
-            className={`absolute inset-0 border-2 border-${currentStatus.color}-500/20 rounded-full animate-ping`}
-          />
-          <div
-            className={`absolute inset-4 border-2 border-${currentStatus.color}-500/30 rounded-full animate-ping`}
-            style={{ animationDelay: "0.5s" }}
-          />
+          <div className={`absolute inset-0 border-2 border-${currentStatus.color}-500/20 rounded-full animate-ping`} />
+          <div className={`absolute inset-4 border-2 border-${currentStatus.color}-500/30 rounded-full animate-ping`} style={{ animationDelay: "0.5s" }} />
         </div>
 
         <div className="relative z-10">
-          <div
-            className={`flex items-center justify-between text-${currentStatus.color}-400 text-sm mb-1`}
-          >
+          <div className={`flex items-center justify-between text-${currentStatus.color}-400 text-sm mb-1`}>
             <div className="flex items-center gap-2">
               <div className={`p-1 rounded-lg bg-${currentStatus.color}-500/20`}>
                 <StatusIcon className="w-3 h-3 animate-pulse" />
               </div>
               <span className="font-medium">RF Coverage</span>
             </div>
-            <div
-              className={`px-2 py-0.5 rounded-full bg-${currentStatus.color}-500/20 border border-${currentStatus.color}-500/40`}
-            >
-              <span className="text-[9px] font-bold">LIVE</span>
+            <div className={`px-2 py-0.5 rounded-full bg-${currentStatus.color}-500/20 border border-${currentStatus.color}-500/40`}>
+              <span className="text-[9px] font-bold uppercase">Socket</span>
             </div>
           </div>
-
-          <div
-            className={`text-xl font-bold text-${currentStatus.color}-400 mb-1`}
-          >
+          <div className={`text-xl font-bold text-${currentStatus.color}-400 mb-1`}>
             {currentStatus.text}
           </div>
-
-          {/* Signal Counter */}
-          <div
-            className={`flex items-center justify-between text-[10px] text-${currentStatus.color}-400/80 mb-1`}
-          >
-            <span>Detected Signals</span>
+          <div className={`flex items-center justify-between text-[10px] text-${currentStatus.color}-400/80 mb-1`}>
+            <span>Active Detections</span>
             <span className="font-bold">{detectedSignals}</span>
           </div>
-
-          {/* Threat Level Bar */}
           <div className="h-1.5 bg-slate-800/50 rounded-full overflow-hidden mb-1">
             <div
               className={`h-full bg-gradient-to-r transition-all duration-1000 ${
-                currentStatus.color === "emerald"
-                  ? "from-emerald-500 to-green-400"
-                  : currentStatus.color === "yellow"
-                  ? "from-yellow-500 to-amber-400 animate-pulse"
-                  : "from-red-500 to-orange-400 animate-pulse"
+                currentStatus.color === "emerald" ? "from-emerald-500 to-green-400" : currentStatus.color === "yellow" ? "from-yellow-500 to-amber-400 animate-pulse" : "from-red-500 to-orange-400 animate-pulse"
               }`}
               style={{ width: currentStatus.barWidth }}
             />
           </div>
-
-          <div
-            className={`text-[10px] text-${currentStatus.color}-400/70 font-medium`}
-          >
+          <div className={`text-[10px] text-${currentStatus.color}-400/70 font-medium`}>
             {currentStatus.description} • 2.4 GHz
           </div>
-        </div>
-
-        {/* Status Change Buttons (Demo) */}
-        <div className="relative z-10 flex gap-1 mt-auto">
-          <button
-            onClick={() => {
-              setRfStatus("safe");
-              setDetectedSignals(2);
-            }}
-            className={`flex-1 py-1 px-2 rounded text-[9px] font-bold transition-all ${
-              rfStatus === "safe"
-                ? "bg-emerald-500/30 text-emerald-400 border border-emerald-500/50"
-                : "bg-slate-800/30 text-slate-500 hover:bg-slate-800/50"
-            }`}
-          >
-            SAFE
-          </button>
-          <button
-            onClick={() => {
-              setRfStatus("warning");
-              setDetectedSignals(12);
-            }}
-            className={`flex-1 py-1 px-2 rounded text-[9px] font-bold transition-all ${
-              rfStatus === "warning"
-                ? "bg-yellow-500/30 text-yellow-400 border border-yellow-500/50"
-                : "bg-slate-800/30 text-slate-500 hover:bg-slate-800/50"
-            }`}
-          >
-            WARN
-          </button>
-          <button
-            onClick={() => {
-              setRfStatus("critical");
-              setDetectedSignals(28);
-            }}
-            className={`flex-1 py-1 px-2 rounded text-[9px] font-bold transition-all ${
-              rfStatus === "critical"
-                ? "bg-red-500/30 text-red-400 border border-red-500/50"
-                : "bg-slate-800/30 text-slate-500 hover:bg-slate-800/50"
-            }`}
-          >
-            CRIT
-          </button>
         </div>
       </div>
     </div>

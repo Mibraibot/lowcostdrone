@@ -11,22 +11,15 @@ export function useRealtimeNodes() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const rootRef = ref(db, "/");
+    const detectionRef = ref(db, "detection_system");
 
     const unsubscribe = onValue(
-      rootRef,
+      detectionRef,
       (snapshot) => {
         const data = snapshot.val() || {};
-
-        // Filter hanya Node*
-        const filteredNodes = Object.keys(data)
-          .filter((key) => key.startsWith("Node"))
-          .reduce((acc, key) => {
-            acc[key] = data[key];
-            return acc;
-          }, {} as NodesMap);
-
-        setNodes(filteredNodes);
+        
+        // Sekarang data langsung berisi node1, node2, node3
+        setNodes(data);
         setLoading(false);
       },
       (err) => {
@@ -35,10 +28,7 @@ export function useRealtimeNodes() {
       }
     );
 
-    return () => {
-      off(rootRef);
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   return { nodes, loading, error };

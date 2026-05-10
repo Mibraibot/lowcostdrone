@@ -2,25 +2,27 @@
 
 import MapPanel from "@/components/sections/panels/MapPanel";
 import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
+import { usePredictionSocket } from "@/hooks/usePredictionSocket";
 import { threatConfig, ThreatLevel } from "@/utils/threat";
 import { useAlertAudio } from "@/context/AlertAudioProvider";
 
 export default function OverviewPanel() {
   const { nodes, loading } = useRealtimeNodes();
+  const { latestPredictions } = usePredictionSocket();
   const { toggleMute, mutedNodes } = useAlertAudio();
 
   return (
-    <div className="mt-6 grid grid-cols-3 gap-6">
+    <div className="mt-4 grid grid-cols-3 gap-4">
       {/* MAP */}
-      <div className="col-span-2 bg-[#151b2d] rounded-xl p-4 h-[700px]">
-        <h3 className="mb-3 text-slate-300 font-semibold">Fleet Locations</h3>
-        <div className="h-[600px]">
+      <div className="col-span-2 bg-[#151b2d] rounded-xl p-4 h-[550px]">
+        <h3 className="mb-2 text-slate-300 font-semibold text-sm">Fleet Locations</h3>
+        <div className="h-[480px]">
           <MapPanel />
         </div>
       </div>
 
       {/* ALERTS */}
-      <div className="bg-[#151b2d] rounded-xl p-4 h-[480px] flex flex-col">
+      <div className="bg-[#151b2d] rounded-xl p-4 h-[550px] flex flex-col">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-slate-200 font-semibold">Real-time Alerts</h3>
           <span className="text-xs text-slate-400">2.4 GHz Monitor</span>
@@ -32,7 +34,12 @@ export default function OverviewPanel() {
           )}
 
           {Object.entries(nodes).map(([nodeId, node]) => {
-            const threatLevel = Number(node.threat) as ThreatLevel;
+            const livePred = latestPredictions[nodeId];
+            const predId = livePred?.prediction_id || 1;
+            const predLabel = livePred?.prediction_label || "No Live Data";
+            
+            // Map prediction_id (1,2,3) to ThreatLevel (1,2,3)
+            const threatLevel = predId as ThreatLevel;
             const config = threatConfig[threatLevel];
             if (!config) return null;
 
@@ -50,13 +57,13 @@ export default function OverviewPanel() {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-slate-200 font-medium">
-                      {nodeId} —{" "}
-                      {threatLevel === 1 && "Normal Activity"}
-                      {threatLevel === 2 && "Suspicious Signal"}
-                      {threatLevel === 3 && "Potential Drone Detected"}
+                      {nodeId.toUpperCase()} — {predLabel}
                     </p>
                     <p className="text-slate-400 text-xs">
-                      RSSI: {node.RSSI} dBm · Packets: {node.Packet}
+                      RSSI: {node.rssi} dBm · SNR: {node.snr}
+                    </p>
+                    <p className="text-[10px] text-blue-400 mt-1">
+                      Battery: {node.battery}% · Last Sync: {node.timestamp_wib}
                     </p>
                   </div>
 
@@ -67,10 +74,9 @@ export default function OverviewPanel() {
                       {config.label}
                     </span>
 
-                    {/* 🔇 Tombol mute */}
                     <button
                       onClick={() => toggleMute(nodeId)}
-                      className="text-xs px-2 py-1 rounded bg-slate-700 hover:bg-slate-600 text-slate-200"
+                      className="text-[10px] px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200"
                     >
                       {isMuted ? "Unmute 🔊" : "Mute 🔇"}
                     </button>

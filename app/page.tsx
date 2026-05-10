@@ -13,9 +13,8 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("overview");
 
   return (
-    <div className="p-6">
+    <div className="p-4 space-y-4">
       <DashboardStats />
-
       <DashboardNavbar active={activeTab} onChange={setActiveTab} />
 
       {activeTab === "overview" && <OverviewPanel />}

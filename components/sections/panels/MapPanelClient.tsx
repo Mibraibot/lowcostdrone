@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   MapContainer,
   TileLayer,
   Marker,
   Popup,
-  Circle,
+  Polygon,
+  Polyline,
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -15,67 +17,185 @@ import "leaflet/dist/leaflet.css";
 // ===============================
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
+// Add pulsing animations via CSS
+const pulseStyles = `
+  @keyframes marker-pulse-safe {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+  }
+  @keyframes marker-pulse-warning {
+    0% { filter: drop-shadow(0 0 2px rgba(255, 191, 0, 0.7)); }
+    50% { filter: drop-shadow(0 0 10px rgba(255, 191, 0, 0.9)); }
+    100% { filter: drop-shadow(0 0 2px rgba(255, 191, 0, 0.7)); }
+  }
+  @keyframes marker-pulse-critical {
+    0% { filter: drop-shadow(0 0 2px rgba(255, 0, 0, 0.8)); }
+    50% { filter: drop-shadow(0 0 20px rgba(255, 0, 0, 1)); }
+    100% { filter: drop-shadow(0 0 2px rgba(255, 0, 0, 0.8)); }
+  }
+  .marker-safe { animation: marker-pulse-safe 3s infinite ease-in-out; }
+  .marker-warning { animation: marker-pulse-warning 1.5s infinite ease-in-out; }
+  .marker-critical { animation: marker-pulse-critical 0.8s infinite ease-in-out; }
+`;
+
+import { useGateway } from "@/hooks/useGateway";
+import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
+import { usePredictionSocket } from "@/hooks/usePredictionSocket";
+import { useMap } from "react-leaflet";
+
+// Component to handle auto-centering when gateway loads
+function MapRecenter({ center }: { center: [number, number] }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center);
+  }, [center, map]);
+  return null;
+}
+
 // ===============================
-// CUSTOM ICON
+// CUSTOM ICONS
 // ===============================
-const homeBaseIcon = L.icon({
-  iconUrl: "/icons/home-base.svg",
-  iconSize: [36, 36],
-  iconAnchor: [18, 18],
+const gatewayIcon = L.icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
 });
 
-// ===============================
-// COORDINATE
-// ===============================
-const center: [number, number] = [-6.2, 106.8166];
+const nodeSafeIcon = L.icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+  className: "marker-safe"
+});
+
+const nodeWarningIcon = L.icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+  className: "marker-warning"
+});
+
+const nodeCriticalIcon = L.icon({
+  iconUrl: "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+  className: "marker-critical"
+});
 
 export default function MapPanelClient() {
-  return (
-    <div className="relative h-full w-full rounded-xl overflow-hidden">
+  const { gateway } = useGateway();
+  const { nodes } = useRealtimeNodes();
+  const { latestPredictions } = usePredictionSocket();
 
-      {/* Overlay Title */}
+  const center: [number, number] = (gateway && !isNaN(Number(gateway.lat)) && !isNaN(Number(gateway.lon)))
+    ? [Number(gateway.lat), Number(gateway.lon)] 
+    : [-6.9147, 107.6098]; // Fallback to default center
+
+  return (
+    <div className="relative h-full w-full rounded-xl overflow-hidden border border-slate-800">
+      <style dangerouslySetInnerHTML={{ __html: pulseStyles }} />
       <div className="absolute top-3 left-3 z-[1000]
-        bg-black/60 backdrop-blur px-3 py-1 rounded
-        text-xs text-cyan-300 tracking-wider">
-        LIVE DRONE MONITORING
+        bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg border border-cyan-500/30
+        text-[10px] font-bold text-cyan-400 tracking-widest uppercase">
+        Live Deployment Monitor
       </div>
 
       <MapContainer
         center={center}
-        zoom={11}
+        zoom={13}
         scrollWheelZoom
-        className="
-          h-full w-full
-          rounded-xl
-          border border-cyan-500/20
-          shadow-[0_0_24px_rgba(0,229,255,0.12)]
-        "
+        className="h-full w-full"
       >
-        {/* DARK MAP TILE */}
+        {gateway && <MapRecenter center={center} />}
+        
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           attribution="&copy; CARTO"
         />
 
-        {/* ===============================
-            DETECTION RADIUS
-        =============================== */}
-        <Circle
-          center={center}
-          radius={3000}
-          pathOptions={{
-            color: "#00e5ff",
-            fillColor: "#00e5ff",
-            fillOpacity: 0.12,
-            weight: 1,
-            dashArray: "6 6",
-          }}
-        />
+        {gateway && (
+          <>
+            {/* PERIMETER POLYGON (Node 1 -> 2 -> 3) */}
+            {gateway.nodes && (
+              <Polygon
+                positions={[
+                  [Number(gateway.nodes.node1?.lat), Number(gateway.nodes.node1?.lon)],
+                  [Number(gateway.nodes.node2?.lat), Number(gateway.nodes.node2?.lon)],
+                  [Number(gateway.nodes.node3?.lat), Number(gateway.nodes.node3?.lon)],
+                ].filter(pos => !isNaN(pos[0]) && !isNaN(pos[1])) as [number, number][]}
+                pathOptions={{
+                  color: "#22d3ee",
+                  weight: 2,
+                  dashArray: "5, 10",
+                  fillColor: "white",
+                  fillOpacity: 0.1,
+                }}
+              />
+            )}
 
-        {/* ===============================
-            HOME BASE MARKER
-        =============================== */}
-    
+            {/* GATEWAY MARKER */}
+            <Marker position={center} icon={gatewayIcon}>
+              <Popup className="custom-popup">
+                <div className="text-slate-900 font-bold">Main Gateway</div>
+                <div className="text-slate-600 text-xs">{center[0].toFixed(4)}, {center[1].toFixed(4)}</div>
+              </Popup>
+            </Marker>
+
+            {/* NODE MARKERS */}
+            {gateway.nodes && Object.entries(gateway.nodes).map(([nodeKey, coords]) => {
+              const nodeData = nodes[nodeKey];
+              const livePrediction = latestPredictions[nodeKey];
+              
+              const lat = Number(coords.lat);
+              const lon = Number(coords.lon);
+
+              if (isNaN(lat) || isNaN(lon)) return null;
+
+              const position: [number, number] = [lat, lon];
+              const label = livePrediction?.prediction_label || "Waiting for Live Data...";
+              const predId = livePrediction?.prediction_id || 1;
+              const isDrone = predId === 3;
+
+              // Select icon based on prediction ID
+              const currentIcon = predId === 3 ? nodeCriticalIcon : predId === 2 ? nodeWarningIcon : nodeSafeIcon;
+
+              return (
+                <Marker 
+                  key={nodeKey} 
+                  position={position} 
+                  icon={currentIcon}
+                >
+                  <Popup>
+                    <div className="font-bold text-slate-800 uppercase">{nodeKey}</div>
+                    <div className={`text-xs ${isDrone ? 'text-red-500 font-bold animate-pulse' : 'text-slate-500'}`}>
+                      Status: {label}<br/>
+                      Battery: {nodeData?.battery || 0}%<br/>
+                      Pos: {lat.toFixed(4)}, {lon.toFixed(4)}
+                      {livePrediction && (
+                        <div className="mt-1 text-[10px] text-cyan-600 font-medium">
+                          (Live via Socket: {new Date(livePrediction.timestamp).toLocaleTimeString()})
+                        </div>
+                      )}
+                    </div>
+                  </Popup>
+                </Marker>
+              );
+            })}
+          </>
+        )}
       </MapContainer>
     </div>
   );
