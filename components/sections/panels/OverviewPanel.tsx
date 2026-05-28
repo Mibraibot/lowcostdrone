@@ -7,7 +7,7 @@ import { threatConfig, ThreatLevel } from "@/utils/threat";
 
 export default function OverviewPanel() {
   const { nodes, loading } = useRealtimeNodes();
-  const { latestPredictions } = usePredictionSocket();
+  // const { latestPredictions } = usePredictionSocket(); // Dimatikan sementara untuk simulasi manual
 
   return (
     <div className="mt-4 grid grid-cols-3 gap-4">
@@ -32,9 +32,12 @@ export default function OverviewPanel() {
           )}
 
           {Object.entries(nodes).map(([nodeId, node]) => {
-            const livePred = latestPredictions[nodeId];
-            const predId = livePred?.prediction_id || 1;
-            const predLabel = livePred?.prediction_label || "No Live Data";
+            // Gunakan node.threats (manual dari Firebase)
+            const predId = Number(node.threats) || 1;
+            
+            let predLabel = "SAFE (WIFI)";
+            if (predId === 2) predLabel = "WARNING (WIFI+BT)";
+            if (predId === 3) predLabel = "CRITICAL (DRONE)";
             
             // Map prediction_id (1,2,3) to ThreatLevel (1,2,3)
             const threatLevel = predId as ThreatLevel;
