@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -37,6 +37,37 @@ const pulseStyles = `
   .marker-safe { animation: marker-pulse-safe 3s infinite ease-in-out; }
   .marker-warning { animation: marker-pulse-warning 1.5s infinite ease-in-out; }
   .marker-critical { animation: marker-pulse-critical 0.8s infinite ease-in-out; }
+  
+  @keyframes radar-pulse {
+    0% { transform: scale(0.1); opacity: 1; }
+    100% { transform: scale(3.5); opacity: 0; }
+  }
+  .radar-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin-left: -50px;
+    margin-top: -50px;
+    pointer-events: none;
+  }
+  .radar-ring {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: 50%;
+    border: 3px solid;
+    animation: radar-pulse 2.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+  }
+  .radar-ring:nth-child(2) {
+    animation-delay: 1.25s;
+  }
+  .radar-safe .radar-ring {
+    border-color: #10b981; /* emerald-500 */
+    background: rgba(16, 185, 129, 0.15);
+  }
+  .radar-critical .radar-ring {
+    border-color: #ef4444; /* red-500 */
+    background: rgba(239, 68, 68, 0.15);
+  }
 `;
 
 import { useGateway } from "@/hooks/useGateway";
@@ -107,6 +138,45 @@ export default function MapPanelClient() {
     ? [Number(gateway.lat), Number(gateway.lon)] 
     : [-6.9147, 107.6098]; // Fallback to default center
 
+  const isCritical = useMemo(() => {
+    let critical = false;
+    if (latestPredictions) {
+      Object.values(latestPredictions).forEach((pred) => {
+        if (pred?.prediction_id === 3) critical = true;
+      });
+    }
+    return critical;
+  }, [latestPredictions]);
+
+  const nodesCenter = useMemo(() => {
+    if (!gateway?.nodes) return center;
+    let sumLat = 0;
+    let sumLon = 0;
+    let count = 0;
+    Object.values(gateway.nodes).forEach((node: any) => {
+      const lat = Number(node.lat);
+      const lon = Number(node.lon);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        sumLat += lat;
+        sumLon += lon;
+        count++;
+      }
+    });
+    if (count === 0) return center;
+    return [sumLat / count, sumLon / count] as [number, number];
+  }, [gateway, center]);
+
+  const radarIcon = useMemo(() => {
+    return L.divIcon({
+      className: 'custom-radar-icon',
+      html: `<div class="radar-container radar-${isCritical ? 'critical' : 'safe'}">
+               <div class="radar-ring"></div>
+               <div class="radar-ring"></div>
+             </div>`,
+      iconSize: [0, 0],
+    });
+  }, [isCritical]);
+
   return (
     <div className="relative h-full w-full rounded-xl overflow-hidden border border-slate-800">
       <style dangerouslySetInnerHTML={{ __html: pulseStyles }} />
@@ -159,6 +229,9 @@ export default function MapPanelClient() {
                 <div className="text-slate-600 text-xs">{center[0].toFixed(4)}, {center[1].toFixed(4)}</div>
               </Popup>
             </Marker>
+
+            {/* RADAR EFFECT ON NODES CENTER */}
+            <Marker position={nodesCenter} icon={radarIcon} interactive={false} zIndexOffset={-100} />
 
             {/* NODE MARKERS */}
             {gateway.nodes && Object.entries(gateway.nodes).map(([nodeKey, coords]) => {

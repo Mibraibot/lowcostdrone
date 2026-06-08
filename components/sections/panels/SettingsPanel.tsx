@@ -6,6 +6,13 @@ import { db } from "@/lib/firebase";
 
 export default function SettingsPanel() {
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const [gateway, setGateway] = useState<any>({
     lat: -6.969170,
     lon: 107.628050,
@@ -45,18 +52,37 @@ export default function SettingsPanel() {
         nodes: parsedNodes
       };
       await set(ref(db, "gateway"), parsedGateway);
-      alert("Settings saved successfully!");
+      showToast("Settings saved successfully!", "success");
     } catch (error) {
       console.error("Error saving settings:", error);
-      alert("Failed to save settings.");
+      showToast("Failed to save settings.", "error");
     }
   };
 
   if (loading) return <div className="p-6 text-slate-400">Loading settings...</div>;
 
   return (
-    <div className="mt-4 space-y-4 bg-[#151b2d] rounded-xl p-4 border border-slate-800/50">
+    <div className="mt-4 space-y-4 bg-[#151b2d] rounded-xl p-4 border border-slate-800/50 relative">
       
+      {toast && (
+        <div className={`fixed top-6 right-6 z-[9999] px-4 py-3 rounded-lg shadow-2xl border text-sm font-bold flex items-center gap-2 transition-all animate-in slide-in-from-top-5 duration-300 ${
+          toast.type === 'success' 
+            ? 'bg-emerald-950/80 border-emerald-500/50 text-emerald-400 backdrop-blur-md' 
+            : 'bg-red-950/80 border-red-500/50 text-red-400 backdrop-blur-md'
+        }`}>
+          {toast.type === 'success' ? (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          )}
+          {toast.message}
+        </div>
+      )}
+
       {/* 📡 GATEWAY COORDINATES */}
       <section className="bg-slate-900/30 p-3 rounded-lg border border-slate-800">
         <h3 className="text-slate-300 text-sm font-semibold mb-3 flex items-center gap-2">
