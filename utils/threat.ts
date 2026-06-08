@@ -15,10 +15,9 @@ export const threatConfig: Record<
     text: "text-green-400",
   },
   2: {
-    label: "WARNING",
-    border: "border-yellow-400",
-    text: "text-yellow-400",
-    alertClass: "alert-warning", // kedip kuning
+    label: "SAFE",
+    border: "border-green-500",
+    text: "text-green-400",
   },
   3: {
     label: "CRITICAL",

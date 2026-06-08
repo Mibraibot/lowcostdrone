@@ -51,8 +51,8 @@ export default function AlertsPanel() {
                         CRITICAL (DRONE)
                       </span>
                     ) : alert.prediction_id === 2 ? (
-                      <span className="bg-yellow-500/10 text-yellow-400 px-2 py-0.5 rounded text-[9px] border border-yellow-500/20">
-                        WARNING (WIFI+BT)
+                      <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-[9px] border border-emerald-500/10">
+                        SAFE (WIFI+BT)
                       </span>
                     ) : (
                       <span className="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-[9px] border border-emerald-500/10">

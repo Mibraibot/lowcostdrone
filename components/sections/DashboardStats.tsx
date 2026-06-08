@@ -329,7 +329,7 @@ export default function DashboardStats() {
       if (nodeData?.rssi) signals += Math.abs(nodeData.rssi) / 10;
     });
 
-    const status: RfStatus = maxId === 3 ? "critical" : maxId === 2 ? "warning" : "safe";
+    const status: RfStatus = maxId === 3 ? "critical" : "safe";
     return { rfStatus: status, detectedSignals: Math.floor(signals) || 5 };
   }, [nodes, latestPredictions]);
 

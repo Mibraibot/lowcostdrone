@@ -131,6 +131,12 @@ async function runPollingLoop() {
 
             for (const [nodeKey, nodeData] of Object.entries(nodes)) {
                 let hex = String(nodeData.data_hex || "");
+                
+                // Hapus prefix "RAW_" agar model ML hanya membaca angkanya
+                if (hex.startsWith("RAW_")) {
+                    hex = hex.replace("RAW_", "");
+                }
+
                 if (!hex) continue;
 
                 // Check if data is new
