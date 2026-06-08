@@ -319,12 +319,13 @@ export default function DashboardStats() {
     
     // Check all nodes from Firebase
     Object.keys(nodes).forEach(nodeKey => {
-      const nodeData = nodes[nodeKey];
-      // Prioritize manual threats from Firebase
-      const id = Number(nodeData.threats) || 1;
+      // Prioritize live prediction from socket
+      const pred = latestPredictions[nodeKey];
+      const id = pred?.prediction_id || 1;
       if (id > maxId) maxId = id;
       
       // Simulate signal count based on RSSI if available
+      const nodeData = nodes[nodeKey];
       if (nodeData?.rssi) signals += Math.abs(nodeData.rssi) / 10;
     });
 
@@ -450,13 +451,10 @@ export default function DashboardStats() {
           </div>
           <div className="space-y-1">
             {Object.entries(nodes).map(([nodeKey, nodeData]) => {
+              const livePred = latestPredictions[nodeKey];
               const battery = nodeData.battery || 0;
               const color = battery > 70 ? "emerald" : battery > 30 ? "yellow" : "red";
-              
-              const predId = Number(nodeData.threats) || 1;
-              let label = "SAFE (WIFI)";
-              if (predId === 2) label = "WARNING (WIFI+BT)";
-              if (predId === 3) label = "CRITICAL (DRONE)";
+              const label = livePred?.prediction_label || "No Prediction";
               
               return (
                 <div key={nodeKey}>
@@ -534,7 +532,7 @@ export default function DashboardStats() {
               <span className="font-medium">RF Coverage</span>
             </div>
             <div className={`px-2 py-0.5 rounded-full bg-${currentStatus.color}-500/20 border border-${currentStatus.color}-500/40`}>
-              <span className="text-[9px] font-bold uppercase">Firebase</span>
+              <span className="text-[9px] font-bold uppercase">Socket</span>
             </div>
           </div>
           <div className={`text-xl font-bold text-${currentStatus.color}-400 mb-1`}>
