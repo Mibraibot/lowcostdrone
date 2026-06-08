@@ -12,15 +12,15 @@ export default function OverviewPanel() {
   return (
     <div className="mt-4 grid grid-cols-3 gap-4">
       {/* MAP */}
-      <div className="col-span-2 bg-[#151b2d] rounded-xl p-4 h-[550px]">
+      <div className="col-span-2 bg-[#151b2d] rounded-xl p-4 h-[510px]">
         <h3 className="mb-2 text-slate-300 font-semibold text-sm">Fleet Locations</h3>
-        <div className="h-[480px]">
+        <div className="h-[450px]">
           <MapPanel />
         </div>
       </div>
 
       {/* ALERTS */}
-      <div className="bg-[#151b2d] rounded-xl p-4 h-[550px] flex flex-col">
+      <div className="bg-[#151b2d] rounded-xl p-4 h-[510px] flex flex-col">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-slate-200 font-semibold">Real-time Alerts</h3>
           <span className="text-xs text-slate-400">2.4 GHz Monitor</span>

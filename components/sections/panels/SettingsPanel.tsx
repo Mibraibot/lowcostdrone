@@ -7,12 +7,12 @@ import { db } from "@/lib/firebase";
 export default function SettingsPanel() {
   const [loading, setLoading] = useState(true);
   const [gateway, setGateway] = useState<any>({
-    lat: -6.200000,
-    lon: 106.816666,
+    lat: -6.969170,
+    lon: 107.628050,
     nodes: {
-      node1: { lat: -6.210000, lon: 106.820000 },
-      node2: { lat: -6.190000, lon: 106.810000 },
-      node3: { lat: -6.205000, lon: 106.830000 },
+      node1: { lat: -6.969358, lon: 107.628097 },
+      node2: { lat: -6.969536, lon: 107.628025 },
+      node3: { lat: -6.969566, lon: 107.628228 },
     }
   });
 

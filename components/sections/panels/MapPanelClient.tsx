@@ -48,7 +48,10 @@ import { useMap } from "react-leaflet";
 function MapRecenter({ center }: { center: [number, number] }) {
   const map = useMap();
   useEffect(() => {
-    map.setView(center);
+    map.flyTo(center, 19, {
+      duration: 4, // 4 detik animasi cinematic
+      easeLinearity: 0.25
+    });
   }, [center, map]);
   return null;
 }
@@ -114,8 +117,9 @@ export default function MapPanelClient() {
       </div>
 
       <MapContainer
-        center={center}
-        zoom={13}
+        center={[-2.5489, 118.0149]}
+        zoom={4}
+        maxZoom={24}
         scrollWheelZoom
         className="h-full w-full"
       >
@@ -124,6 +128,8 @@ export default function MapPanelClient() {
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           attribution="&copy; CARTO"
+          maxNativeZoom={20}
+          maxZoom={24}
         />
 
         {gateway && (

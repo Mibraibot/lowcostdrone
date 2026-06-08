@@ -382,7 +382,7 @@ export default function DashboardStats() {
     <div className="grid grid-cols-4 gap-4">
       {/* GATEWAY */}
       <div
-        className={`group relative h-[150px] flex flex-col justify-between
+        className={`group relative h-[125px] flex flex-col justify-between
   bg-gradient-to-br from-[#1a2332] to-[#0f1419]
   rounded-2xl p-3 border border-emerald-500/30
   hover:border-emerald-400/60 transition-all duration-500 overflow-hidden
@@ -395,7 +395,7 @@ export default function DashboardStats() {
         </div>
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
+            <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
               <div className="p-1 rounded-lg bg-emerald-500/10">
                 <Wifi className="w-3 h-3 text-emerald-400" />
               </div>
@@ -403,7 +403,7 @@ export default function DashboardStats() {
             </div>
             <Signal className="w-3 h-3 text-emerald-400 animate-pulse" />
           </div>
-          <div className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">
+          <div className="text-lg font-bold bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent">
             ONLINE
           </div>
           <div className="mt-1 h-1 bg-slate-800 rounded-full overflow-hidden">
@@ -441,18 +441,18 @@ export default function DashboardStats() {
 
       {/* ACTIVE NODES */}
       <div
-        className={`group relative h-[150px] flex flex-col justify-between
+        className={`group relative h-[125px] flex flex-col justify-between
         bg-gradient-to-br from-[#1a2332] to-[#0f1419]
         rounded-2xl p-3 border border-slate-700/50
         hover:border-slate-600 transition-all duration-500 overflow-hidden
         ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
       >
         <div className="relative z-10">
-          <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+          <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
             <BatteryFull className="w-3 h-3" />
             Node Status (Live)
           </div>
-          <div className="text-xl font-bold text-slate-200 mb-1">
+          <div className="text-lg font-bold text-slate-200 mb-1">
             {Object.keys(nodes).length} / 3
           </div>
           <div className="space-y-1">
@@ -487,18 +487,18 @@ export default function DashboardStats() {
 
       {/* GPS */}
       <div
-        className={`group relative h-[150px] flex flex-col justify-between
+        className={`group relative h-[125px] flex flex-col justify-between
         bg-gradient-to-br from-[#1a2332] to-[#0f1419]
         rounded-2xl p-3 border border-slate-700/50
         hover:border-blue-500/40 transition-all duration-500 overflow-hidden
         ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
       >
         <div className="relative z-10">
-          <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+          <div className="flex items-center gap-2 text-slate-400 text-xs mb-1">
             <MapPin className="w-3 h-3 text-blue-400" />
             GPS Status
           </div>
-          <div className="text-xl font-bold text-blue-400 mb-1 uppercase">Active</div>
+          <div className="text-lg font-bold text-blue-400 mb-1 uppercase">Active</div>
           <div className="space-y-1 text-[10px] font-mono text-slate-400">
             {gateway?.nodes ? Object.entries(gateway.nodes).map(([nodeKey, coords]) => (
               <div key={nodeKey} className="flex gap-1 items-center">
@@ -514,7 +514,7 @@ export default function DashboardStats() {
 
       {/* RF COVERAGE - Dynamic Status */}
       <div
-        className={`group relative h-[150px] flex flex-col justify-between
+        className={`group relative h-[125px] flex flex-col justify-between
         bg-gradient-to-br rounded-2xl p-3 border-2
         transition-all duration-500 overflow-hidden
         ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
@@ -530,7 +530,7 @@ export default function DashboardStats() {
         </div>
 
         <div className="relative z-10">
-          <div className={`flex items-center justify-between text-${currentStatus.color}-400 text-sm mb-1`}>
+          <div className={`flex items-center justify-between text-${currentStatus.color}-400 text-xs mb-1`}>
             <div className="flex items-center gap-2">
               <div className={`p-1 rounded-lg bg-${currentStatus.color}-500/20`}>
                 <StatusIcon className="w-3 h-3 animate-pulse" />
@@ -541,7 +541,7 @@ export default function DashboardStats() {
               <span className="text-[9px] font-bold uppercase">Socket</span>
             </div>
           </div>
-          <div className={`text-xl font-bold text-${currentStatus.color}-400 mb-1`}>
+          <div className={`text-lg font-bold text-${currentStatus.color}-400 mb-1`}>
             {currentStatus.text}
           </div>
           <div className={`flex items-center justify-between text-[10px] text-${currentStatus.color}-400/80 mb-1`}>
