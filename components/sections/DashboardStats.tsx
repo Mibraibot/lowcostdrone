@@ -37,14 +37,16 @@ function useDebouncedCallback<T extends (...args: unknown[]) => void>(
 
 // Reverse geocoding via Nominatim (OpenStreetMap)
 // NOTE: Untuk produksi, pertimbangkan lewat server (proxy) + header User-Agent.
-async function reverseGeocode(lat: number, lon: number): Promise<string> {
-  const key = `${lat.toFixed(6)},${lon.toFixed(6)}`;
+async function reverseGeocode(lat: number | string, lon: number | string): Promise<string> {
+  const numLat = Number(lat) || 0;
+  const numLon = Number(lon) || 0;
+  const key = `${numLat.toFixed(6)},${numLon.toFixed(6)}`;
   if (geocodeCache.has(key)) return geocodeCache.get(key)!;
 
   const url = new URL("https://nominatim.openstreetmap.org/reverse");
   url.searchParams.set("format", "jsonv2");
-  url.searchParams.set("lat", String(lat));
-  url.searchParams.set("lon", String(lon));
+  url.searchParams.set("lat", String(numLat));
+  url.searchParams.set("lon", String(numLon));
   url.searchParams.set("zoom", "14");
   url.searchParams.set("addressdetails", "1");
 
@@ -230,17 +232,21 @@ function HoverableLatLon({
   inline = true,
   labelPrefix,
 }: {
-  lat: number;
-  lon: number;
+  lat: number | string;
+  lon: number | string;
   inline?: boolean;
   labelPrefix?: string;
 }) {
   const [open, setOpen] = useState(false);
   const { address, loading, err, trigger, reset } = useReverseGeocodeOnHover(
-    lat,
-    lon
+    Number(lat) || 0,
+    Number(lon) || 0
   );
-  const fmt = useMemo(() => `${lat.toFixed(4)}, ${lon.toFixed(4)}`, [lat, lon]);
+  const fmt = useMemo(() => {
+    const nLat = Number(lat) || 0;
+    const nLon = Number(lon) || 0;
+    return `${nLat.toFixed(4)}, ${nLon.toFixed(4)}`;
+  }, [lat, lon]);
 
   // Hindari membaca ref.current saat render: gunakan callback ref ke state
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);

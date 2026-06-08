@@ -6,7 +6,7 @@ import { db } from "@/lib/firebase";
 
 export default function SettingsPanel() {
   const [loading, setLoading] = useState(true);
-  const [gateway, setGateway] = useState({
+  const [gateway, setGateway] = useState<any>({
     lat: -6.200000,
     lon: 106.816666,
     nodes: {
@@ -30,7 +30,21 @@ export default function SettingsPanel() {
 
   const handleSave = async () => {
     try {
-      await set(ref(db, "gateway"), gateway);
+      const parsedNodes: any = {};
+      if (gateway.nodes) {
+        Object.keys(gateway.nodes).forEach(key => {
+          parsedNodes[key] = {
+            lat: Number(gateway.nodes[key].lat) || 0,
+            lon: Number(gateway.nodes[key].lon) || 0
+          };
+        });
+      }
+      const parsedGateway = {
+        lat: Number(gateway.lat) || 0,
+        lon: Number(gateway.lon) || 0,
+        nodes: parsedNodes
+      };
+      await set(ref(db, "gateway"), parsedGateway);
       alert("Settings saved successfully!");
     } catch (error) {
       console.error("Error saving settings:", error);
@@ -54,18 +68,18 @@ export default function SettingsPanel() {
             <label className="text-[10px] text-slate-500 uppercase tracking-wider">Latitude</label>
             <input
               className="w-full bg-slate-900 border border-slate-700 p-2 rounded-lg text-sm text-slate-200 focus:border-blue-500"
-              type="number"
+              type="text"
               value={gateway.lat}
-              onChange={(e) => setGateway({ ...gateway, lat: Number(e.target.value) })}
+              onChange={(e) => setGateway({ ...gateway, lat: e.target.value })}
             />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] text-slate-500 uppercase tracking-wider">Longitude</label>
             <input
               className="w-full bg-slate-900 border border-slate-700 p-2 rounded-lg text-sm text-slate-200 focus:border-blue-500"
-              type="number"
+              type="text"
               value={gateway.lon}
-              onChange={(e) => setGateway({ ...gateway, lon: Number(e.target.value) })}
+              onChange={(e) => setGateway({ ...gateway, lon: e.target.value })}
             />
           </div>
         </div>
@@ -84,11 +98,11 @@ export default function SettingsPanel() {
                   <label className="text-[9px] text-slate-500 uppercase">Lat</label>
                   <input
                     className="w-full bg-slate-900 border border-slate-700 p-1.5 rounded text-[11px] text-slate-200"
-                    type="number"
-                    value={gateway.nodes[nodeKey as keyof typeof gateway.nodes].lat}
+                    type="text"
+                    value={gateway.nodes[nodeKey].lat}
                     onChange={(e) => {
                       const newGateway = { ...gateway };
-                      newGateway.nodes[nodeKey as keyof typeof gateway.nodes].lat = Number(e.target.value);
+                      newGateway.nodes[nodeKey].lat = e.target.value;
                       setGateway(newGateway);
                     }}
                   />
@@ -97,11 +111,11 @@ export default function SettingsPanel() {
                   <label className="text-[9px] text-slate-500 uppercase">Lon</label>
                   <input
                     className="w-full bg-slate-900 border border-slate-700 p-1.5 rounded text-[11px] text-slate-200"
-                    type="number"
-                    value={gateway.nodes[nodeKey as keyof typeof gateway.nodes].lon}
+                    type="text"
+                    value={gateway.nodes[nodeKey].lon}
                     onChange={(e) => {
                       const newGateway = { ...gateway };
-                      newGateway.nodes[nodeKey as keyof typeof gateway.nodes].lon = Number(e.target.value);
+                      newGateway.nodes[nodeKey].lon = e.target.value;
                       setGateway(newGateway);
                     }}
                   />
