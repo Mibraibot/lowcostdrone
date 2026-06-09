@@ -458,7 +458,7 @@ export default function DashboardStats() {
           <div className="space-y-[3px]">
             {Object.entries(nodes).map(([nodeKey, nodeData]) => {
               const livePred = latestPredictions[nodeKey];
-              const battery = nodeData.battery || 0;
+              const battery = nodeData.batt || 0;
               const color = battery > 70 ? "emerald" : battery > 30 ? "yellow" : "red";
               const label = livePred?.prediction_label || "No Prediction";
               

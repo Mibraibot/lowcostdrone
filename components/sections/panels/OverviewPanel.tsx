@@ -59,7 +59,7 @@ export default function OverviewPanel() {
                       RSSI: {node.rssi} dBm · SNR: {node.snr}
                     </p>
                     <p className="text-[10px] text-blue-400 mt-1">
-                      Battery: {node.battery}% · Last Sync: {node.timestamp_wib}
+                      Battery: {node.batt || 0}% · Last Sync: {node.timestamp_wib}
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">

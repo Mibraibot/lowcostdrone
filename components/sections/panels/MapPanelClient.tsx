@@ -261,7 +261,7 @@ export default function MapPanelClient() {
                     <div className="font-bold text-slate-800 uppercase">{nodeKey}</div>
                     <div className={`text-xs ${isDrone ? 'text-red-500 font-bold animate-pulse' : 'text-slate-500'}`}>
                       Status: {label}<br/>
-                      Battery: {nodeData?.battery || 0}%<br/>
+                      Battery: {nodeData?.batt || 0}%<br/>
                       Pos: {lat.toFixed(4)}, {lon.toFixed(4)}
                       {livePrediction && (
                         <div className="mt-1 text-[10px] text-cyan-600 font-medium">

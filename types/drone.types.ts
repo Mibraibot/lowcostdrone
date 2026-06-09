@@ -7,7 +7,7 @@ export type GatewayData = {
 export type NodeData = {
   rssi: number;
   snr: number;
-  battery: number;
+  batt: number;
   data_hex: string;
   timestamp_wib: string;
   captured_at?: string;
