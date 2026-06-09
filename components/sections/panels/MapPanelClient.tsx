@@ -261,7 +261,20 @@ export default function MapPanelClient() {
                     <div className="font-bold text-slate-800 uppercase">{nodeKey}</div>
                     <div className={`text-xs ${isDrone ? 'text-red-500 font-bold animate-pulse' : 'text-slate-500'}`}>
                       Status: {label}<br/>
-                      Battery: {nodeData?.batt || 0}%<br/>
+                      {(() => {
+                        let isConnected = false;
+                        if (nodeData?.captured_at) {
+                          const capturedTime = new Date(nodeData.captured_at.replace(" ", "T")).getTime();
+                          if (!isNaN(capturedTime) && (Date.now() - capturedTime) < 2 * 60 * 1000) {
+                            isConnected = true;
+                          }
+                        }
+                        return (
+                          <span className={isConnected ? "text-emerald-400 font-bold" : "text-red-400 font-bold"}>
+                            {isConnected ? "Connected" : "Disconnected"}
+                          </span>
+                        );
+                      })()}<br/>
                       Pos: {lat.toFixed(4)}, {lon.toFixed(4)}
                       {livePrediction && (
                         <div className="mt-1 text-[10px] text-cyan-600 font-medium">

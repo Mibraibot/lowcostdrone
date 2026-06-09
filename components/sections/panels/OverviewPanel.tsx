@@ -58,8 +58,21 @@ export default function OverviewPanel() {
                     <p className="text-slate-400 text-xs">
                       RSSI: {node.rssi} dBm · SNR: {node.snr}
                     </p>
-                    <p className="text-[10px] text-blue-400 mt-1">
-                      Battery: {node.batt || 0}% · Last Sync: {node.timestamp_wib}
+                    <p className="text-[10px] mt-1">
+                      {(() => {
+                        let isConnected = false;
+                        if (node.captured_at) {
+                          const capturedTime = new Date(node.captured_at.replace(" ", "T")).getTime();
+                          if (!isNaN(capturedTime) && (Date.now() - capturedTime) < 2 * 60 * 1000) {
+                            isConnected = true;
+                          }
+                        }
+                        return (
+                          <span className={isConnected ? "text-emerald-400" : "text-red-400"}>
+                            Status: {isConnected ? "Connected" : "Disconnected"}
+                          </span>
+                        );
+                      })()}
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">

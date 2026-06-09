@@ -449,8 +449,8 @@ export default function DashboardStats() {
       >
         <div className="relative z-10">
           <div className="flex items-center gap-2 text-slate-400 text-xs mb-0.5">
-            <BatteryFull className="w-3 h-3" />
-            Node Status (Live)
+            <Wifi className="w-3 h-3" />
+            Node Connection
           </div>
           <div className="text-lg font-bold leading-none text-slate-200 mb-1">
             {Object.keys(nodes).length} / 3
@@ -458,24 +458,31 @@ export default function DashboardStats() {
           <div className="space-y-[3px]">
             {Object.entries(nodes).map(([nodeKey, nodeData]) => {
               const livePred = latestPredictions[nodeKey];
-              const battery = nodeData.batt || 0;
-              const color = battery > 70 ? "emerald" : battery > 30 ? "yellow" : "red";
               const label = livePred?.prediction_label || "No Prediction";
               
+              let isConnected = false;
+              if (nodeData.captured_at) {
+                const capturedTime = new Date(nodeData.captured_at.replace(" ", "T")).getTime();
+                if (!isNaN(capturedTime) && (Date.now() - capturedTime) < 2 * 60 * 1000) {
+                  isConnected = true;
+                }
+              }
+
+              const statusColor = isConnected ? "emerald" : "red";
+              const statusText = isConnected ? "CONNECTED" : "DISCONNECTED";
+
               return (
                 <div key={nodeKey}>
                   <div className="flex justify-between text-[10px]">
                     <span className="text-slate-400 uppercase font-mono">{nodeKey} • <span className="text-cyan-400">{label}</span></span>
-                    <span className={`text-${color}-400 font-semibold`}>
-                      {battery}%
+                    <span className={`text-${statusColor}-400 font-semibold`}>
+                      {statusText}
                     </span>
                   </div>
-                  <div className="h-1 bg-slate-700 rounded-full overflow-hidden">
+                  <div className="h-1 bg-slate-700 rounded-full overflow-hidden mt-0.5">
                     <div
-                      className={`h-full ${
-                        color === "emerald" ? "bg-emerald-500" : color === "yellow" ? "bg-yellow-500" : "bg-red-500"
-                      }`}
-                      style={{ width: `${battery}%` }}
+                      className={`h-full bg-${statusColor}-500 ${isConnected ? "animate-pulse" : "opacity-50"}`}
+                      style={{ width: "100%" }}
                     />
                   </div>
                 </div>
