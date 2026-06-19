@@ -21,7 +21,7 @@ const { Server } = require('socket.io');
 // ----------------------------------------------------------------------------
 const PORT = process.env.PORT || 4000;
 const POLLING_INTERVAL = 2000; // 2 Seconds
-const MODEL_PATH = './drone_detector_model.onnx';
+const MODEL_PATH = './random_forest_drone_detector.onnx';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -73,8 +73,8 @@ async function performInference(hexStr) {
             newData.push(parseInt(hexStr.substr(i, 2), 16));
         }
 
-        // Feature Engineering: Padding/Trimming to 63 features
-        const expectedFeatures = 63; 
+        // Feature Engineering: Padding/Trimming to 125 features
+        const expectedFeatures = 125; 
         if (newData.length < expectedFeatures) {
             newData = newData.concat(new Array(expectedFeatures - newData.length).fill(0));
         } else if (newData.length > expectedFeatures) {
@@ -86,8 +86,8 @@ async function performInference(hexStr) {
         const tensor = new ort.Tensor('float32', floatData, [1, expectedFeatures]);
 
         // Run ML Model
-        const results = await ortSession.run({ float_input: tensor }, ['output_label']);
-        const prediction = Number(results.output_label.data[0]);
+        const results = await ortSession.run({ input: tensor }, ['label']);
+        const prediction = Number(results.label.data[0]);
 
         // Label Mapping
         const mapping = {
