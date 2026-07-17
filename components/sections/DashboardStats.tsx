@@ -303,13 +303,13 @@ function HoverableLatLon({
 
 type RfStatus = "safe" | "warning" | "critical";
 
-import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
+import { useFirebasePredictions } from "@/hooks/useFirebasePredictions";
 import { usePredictionSocket } from "@/hooks/usePredictionSocket";
 import { useGateway } from "@/hooks/useGateway";
 
 export default function DashboardStats() {
   const [mounted, setMounted] = useState(false);
-  const { nodes } = useRealtimeNodes();
+  const { nodes, predictions } = useFirebasePredictions();
   const { latestPredictions } = usePredictionSocket();
   const { gateway } = useGateway();
 
@@ -320,24 +320,26 @@ export default function DashboardStats() {
 
   // Determine global RF status based on latest predictions
   const { rfStatus, detectedSignals } = useMemo(() => {
-    let maxId = 1;
+    let critical = false;
     let signals = 0;
-    
+
     // Check all nodes from Firebase
     Object.keys(nodes).forEach(nodeKey => {
-      // Prioritize live prediction from socket
-      const pred = latestPredictions[nodeKey];
-      const id = pred?.prediction_id || 1;
-      if (id > maxId) maxId = id;
-      
+      // Prioritas: hasil deteksi backend dari Firebase, fallback socket lama
+      const fbPred = predictions[nodeKey];
+      const socketPred = latestPredictions[nodeKey];
+      if (fbPred ? fbPred.is_drone : socketPred?.prediction_id === 3) {
+        critical = true;
+      }
+
       // Simulate signal count based on RSSI if available
       const nodeData = nodes[nodeKey];
       if (nodeData?.rssi) signals += Math.abs(nodeData.rssi) / 10;
     });
 
-    const status: RfStatus = maxId === 3 ? "critical" : "safe";
+    const status: RfStatus = critical ? "critical" : "safe";
     return { rfStatus: status, detectedSignals: Math.floor(signals) || 5 };
-  }, [nodes, latestPredictions]);
+  }, [nodes, predictions, latestPredictions]);
 
   const rfConfig = {
     safe: {
@@ -457,8 +459,12 @@ export default function DashboardStats() {
           </div>
           <div className="space-y-[3px]">
             {Object.entries(nodes).map(([nodeKey, nodeData]) => {
+              // Prioritas: hasil deteksi backend dari Firebase, fallback socket lama
               const livePred = latestPredictions[nodeKey];
-              const label = livePred?.prediction_label || "No Prediction";
+              const label =
+                predictions[nodeKey]?.prediction_label ??
+                livePred?.prediction_label ??
+                "No Prediction";
               
               let isConnected = false;
               if (nodeData.captured_at) {
@@ -545,7 +551,7 @@ export default function DashboardStats() {
               <span className="font-medium">RF Coverage</span>
             </div>
             <div className={`px-2 py-0.5 rounded-full bg-${currentStatus.color}-500/20 border border-${currentStatus.color}-500/40`}>
-              <span className="text-[9px] font-bold uppercase">Socket</span>
+              <span className="text-[9px] font-bold uppercase">Live</span>
             </div>
           </div>
           <div className={`text-lg font-bold leading-none text-${currentStatus.color}-400 mb-1`}>
@@ -558,7 +564,7 @@ export default function DashboardStats() {
           <div className="h-1.5 bg-slate-800/50 rounded-full overflow-hidden mb-1">
             <div
               className={`h-full bg-gradient-to-r transition-all duration-1000 ${
-                currentStatus.color === "emerald" ? "from-emerald-500 to-green-400" : currentStatus.color === "yellow" ? "from-yellow-500 to-amber-400 animate-pulse" : "from-red-500 to-orange-400 animate-pulse"
+                currentStatus.color === "emerald" ? "from-emerald-500 to-green-400" : (currentStatus.color as string) === "yellow" ? "from-yellow-500 to-amber-400 animate-pulse" : "from-red-500 to-orange-400 animate-pulse"
               }`}
               style={{ width: currentStatus.barWidth }}
             />

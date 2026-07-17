@@ -26,3 +26,14 @@ export const threatConfig: Record<
     alertClass: "alert-critical", // denyut merah
   },
 };
+
+// Backend (Gateway_LCDD1/backend/app.py) menulis prediction_id 0 = AMAN,
+// 1 = DRONE TERDETEKSI ke detection_system/{node} di Firebase.
+export function threatFromBackendPrediction(
+  predictionId?: number,
+  predictionLabel?: string
+): ThreatLevel {
+  if (predictionId === 1) return 3;
+  if ((predictionLabel ?? "").toUpperCase().includes("DRONE")) return 3;
+  return 1;
+}
