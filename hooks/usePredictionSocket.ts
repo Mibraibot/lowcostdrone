@@ -35,9 +35,10 @@ export function usePredictionSocket() {
       console.log("Received prediction:", data);
       
       // Update latest prediction per node
+      // (kunci dinormalisasi ke huruf kecil agar cocok dengan useRealtimeNodes)
       setLatestPredictions((prev) => ({
         ...prev,
-        [data.node]: data,
+        [(data.node || "").toLowerCase()]: data,
       }));
 
       // Add to alerts history (keep last 20)

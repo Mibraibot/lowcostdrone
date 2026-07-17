@@ -71,7 +71,7 @@ const pulseStyles = `
 `;
 
 import { useGateway } from "@/hooks/useGateway";
-import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
+import { useFirebasePredictions } from "@/hooks/useFirebasePredictions";
 import { usePredictionSocket } from "@/hooks/usePredictionSocket";
 import { useMap } from "react-leaflet";
 
@@ -131,7 +131,7 @@ const nodeCriticalIcon = L.icon({
 
 export default function MapPanelClient() {
   const { gateway } = useGateway();
-  const { nodes } = useRealtimeNodes();
+  const { nodes, predictions } = useFirebasePredictions();
   const { latestPredictions } = usePredictionSocket();
 
   const center: [number, number] = (gateway && !isNaN(Number(gateway.lat)) && !isNaN(Number(gateway.lon)))
@@ -139,14 +139,13 @@ export default function MapPanelClient() {
     : [-6.9147, 107.6098]; // Fallback to default center
 
   const isCritical = useMemo(() => {
-    let critical = false;
-    if (latestPredictions) {
-      Object.values(latestPredictions).forEach((pred) => {
-        if (pred?.prediction_id === 3) critical = true;
-      });
-    }
-    return critical;
-  }, [latestPredictions]);
+    // Prioritas: hasil deteksi backend dari Firebase, fallback socket lama
+    const firebaseDrone = Object.values(predictions).some((pred) => pred.is_drone);
+    const socketDrone = Object.values(latestPredictions).some(
+      (pred) => pred?.prediction_id === 3
+    );
+    return firebaseDrone || socketDrone;
+  }, [predictions, latestPredictions]);
 
   const nodesCenter = useMemo(() => {
     if (!gateway?.nodes) return center;
@@ -235,21 +234,31 @@ export default function MapPanelClient() {
 
             {/* NODE MARKERS */}
             {gateway.nodes && Object.entries(gateway.nodes).map(([nodeKey, coords]) => {
-              const nodeData = nodes[nodeKey];
-              const livePrediction = latestPredictions[nodeKey];
-              
+              const nodeData = nodes[nodeKey.toLowerCase()];
+              // Prioritas: hasil deteksi backend dari Firebase, fallback socket lama
+              const fbPrediction = predictions[nodeKey.toLowerCase()];
+              const livePrediction = latestPredictions[nodeKey.toLowerCase()];
+
               const lat = Number(coords.lat);
               const lon = Number(coords.lon);
 
               if (isNaN(lat) || isNaN(lon)) return null;
 
               const position: [number, number] = [lat, lon];
-              const label = livePrediction?.prediction_label || "Waiting for Live Data...";
-              const predId = livePrediction?.prediction_id || 1;
-              const isDrone = predId === 3;
+              const label =
+                fbPrediction?.prediction_label ??
+                livePrediction?.prediction_label ??
+                "Waiting for Data...";
+              const isDrone = fbPrediction
+                ? fbPrediction.is_drone
+                : livePrediction?.prediction_id === 3;
 
-              // Select icon based on prediction ID
-              const currentIcon = predId === 3 ? nodeCriticalIcon : predId === 2 ? nodeWarningIcon : nodeSafeIcon;
+              // Select icon based on prediction result
+              const currentIcon = isDrone
+                ? nodeCriticalIcon
+                : !fbPrediction && livePrediction?.prediction_id === 2
+                  ? nodeWarningIcon
+                  : nodeSafeIcon;
 
               return (
                 <Marker 
@@ -276,7 +285,11 @@ export default function MapPanelClient() {
                         );
                       })()}<br/>
                       Pos: {lat.toFixed(4)}, {lon.toFixed(4)}
-                      {livePrediction && (
+                      {fbPrediction?.timestamp ? (
+                        <div className="mt-1 text-[10px] text-cyan-600 font-medium">
+                          (Backend via Firebase: {new Date(fbPrediction.timestamp.replace(" ", "T")).toLocaleTimeString()})
+                        </div>
+                      ) : livePrediction && (
                         <div className="mt-1 text-[10px] text-cyan-600 font-medium">
                           (Live via Socket: {new Date(livePrediction.timestamp).toLocaleTimeString()})
                         </div>

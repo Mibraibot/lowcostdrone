@@ -1,12 +1,12 @@
 "use client";
 
 import MapPanel from "@/components/sections/panels/MapPanel";
-import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
+import { useFirebasePredictions } from "@/hooks/useFirebasePredictions";
 import { usePredictionSocket } from "@/hooks/usePredictionSocket";
-import { threatConfig, ThreatLevel } from "@/utils/threat";
+import { threatConfig, threatFromBackendPrediction, ThreatLevel } from "@/utils/threat";
 
 export default function OverviewPanel() {
-  const { nodes, loading } = useRealtimeNodes();
+  const { nodes, predictions, loading } = useFirebasePredictions();
   const { latestPredictions } = usePredictionSocket();
 
   return (
@@ -32,12 +32,18 @@ export default function OverviewPanel() {
           )}
 
           {Object.entries(nodes).map(([nodeId, node]) => {
+            // Prioritas: hasil deteksi backend dari Firebase, fallback socket lama
+            const fbPred = predictions[nodeId];
             const livePred = latestPredictions[nodeId];
-            const predId = livePred?.prediction_id || 1;
-            const predLabel = livePred?.prediction_label || "No Live Data";
-            
-            // Map prediction_id (1,2,3) to ThreatLevel (1,2,3)
-            const threatLevel = predId as ThreatLevel;
+
+            const threatLevel: ThreatLevel = fbPred
+              ? threatFromBackendPrediction(fbPred.prediction_id, fbPred.prediction_label)
+              : ((livePred?.prediction_id === 2 || livePred?.prediction_id === 3
+                  ? livePred.prediction_id
+                  : 1) as ThreatLevel);
+            const predLabel =
+              fbPred?.prediction_label ?? livePred?.prediction_label ?? "No Prediction";
+
             const config = threatConfig[threatLevel];
             if (!config) return null;
 
