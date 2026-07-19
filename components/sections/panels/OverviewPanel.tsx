@@ -1,45 +1,39 @@
 "use client";
 
 import MapPanel from "@/components/sections/panels/MapPanel";
-import { useRealtimeNodes } from "@/hooks/useRealtimeNodes";
-import { usePredictionSocket } from "@/hooks/usePredictionSocket";
+import { useTimeseries } from "@/hooks/useTimeseries";
 import { threatConfig, ThreatLevel } from "@/utils/threat";
+import { isNodeConnected } from "@/utils/connection";
 
 export default function OverviewPanel() {
-  const { nodes, loading } = useRealtimeNodes();
-  const { latestPredictions } = usePredictionSocket();
+  const { latestPredictions, now } = useTimeseries();
 
   return (
-    <div className="mt-4 grid grid-cols-3 gap-4">
+    <div className="grid grid-cols-3 gap-4 flex-1 min-h-0">
       {/* MAP */}
-      <div className="col-span-2 bg-[#151b2d] rounded-xl p-4 h-[510px]">
+      <div className="col-span-2 bg-[#151b2d] rounded-xl p-4 h-full">
         <h3 className="mb-2 text-slate-300 font-semibold text-sm">Fleet Locations</h3>
-        <div className="h-[450px]">
+        <div className="h-[calc(100%-2rem)]">
           <MapPanel />
         </div>
       </div>
 
       {/* ALERTS */}
-      <div className="bg-[#151b2d] rounded-xl p-4 h-[510px] flex flex-col">
+      <div className="bg-[#151b2d] rounded-xl p-4 h-full flex flex-col">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-slate-200 font-semibold">Real-time Alerts</h3>
           <span className="text-xs text-slate-400">2.4 GHz Monitor</span>
         </div>
 
         <ul className="space-y-3 text-sm overflow-y-auto flex-1 pr-1">
-          {loading && (
-            <li className="text-slate-400 text-xs">Loading alerts...</li>
-          )}
-
-          {Object.entries(nodes).map(([nodeId, node]) => {
-            const livePred = latestPredictions[nodeId];
-            const predId = livePred?.prediction_id || 1;
-            const predLabel = livePred?.prediction_label || "No Live Data";
-            
-            // Map prediction_id (1,2,3) to ThreatLevel (1,2,3)
-            const threatLevel = predId as ThreatLevel;
+          {Object.entries(latestPredictions).map(([nodeId, pred]) => {
+            const isDrone = pred?.isDrone || false;
+            const predLabel = pred?.prediction_label || "No Live Data";
+            const threatLevel: ThreatLevel = isDrone ? 1 : 0;
             const config = threatConfig[threatLevel];
             if (!config) return null;
+
+            const connected = isNodeConnected(pred?.timestamp, now);
 
             return (
               <li
@@ -56,29 +50,17 @@ export default function OverviewPanel() {
                       {nodeId.toUpperCase()} — {predLabel}
                     </p>
                     <p className="text-slate-400 text-xs">
-                      RSSI: {node.rssi} dBm · SNR: {node.snr}
+                      LoRa Comm Status — RSSI: {pred?.original_data?.rssi} · SNR:{" "}
+                      {pred?.original_data?.snr}
                     </p>
                     <p className="text-[10px] mt-1">
-                      {(() => {
-                        let isConnected = false;
-                        if (node.captured_at) {
-                          const capturedTime = new Date(node.captured_at.replace(" ", "T")).getTime();
-                          if (!isNaN(capturedTime) && (Date.now() - capturedTime) < 2 * 60 * 1000) {
-                            isConnected = true;
-                          }
-                        }
-                        return (
-                          <span className={isConnected ? "text-emerald-400" : "text-red-400"}>
-                            Status: {isConnected ? "Connected" : "Disconnected"}
-                          </span>
-                        );
-                      })()}
+                      <span className={connected ? "text-emerald-400" : "text-red-400"}>
+                        Status: {connected ? "Connected" : "Disconnected"}
+                      </span>
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <span
-                      className={["text-xs font-semibold", config.text].join(" ")}
-                    >
+                    <span className={["text-xs font-semibold", config.text].join(" ")}>
                       {config.label}
                     </span>
                   </div>
@@ -89,7 +71,7 @@ export default function OverviewPanel() {
         </ul>
 
         <div className="mt-3 text-xs text-slate-500 border-t border-slate-800 pt-2">
-          Alerts generated from RSSI & packet activity
+          Alerts generated from RSSI &amp; packet activity
         </div>
       </div>
     </div>

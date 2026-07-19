@@ -3,14 +3,7 @@
 import { useEffect, useState } from "react";
 import { ref, onValue } from "firebase/database";
 import { db } from "@/lib/firebase";
-
-export type GatewayConfig = {
-  lat: number;
-  lon: number;
-  nodes: {
-    [key: string]: { lat: number; lon: number };
-  };
-};
+import type { GatewayConfig } from "@/types/drone.types";
 
 export function useGateway() {
   const [gateway, setGateway] = useState<GatewayConfig | null>(null);

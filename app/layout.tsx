@@ -10,9 +10,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <title>Low Cost Drone Dashboard</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className="min-h-screen text-white bg-[#111625]">
+      <body className="h-screen overflow-hidden text-white bg-[#111625]">
         <Header />
-        <main>{children}</main>
+        <main className="h-[calc(100vh-3rem)]">{children}</main>
       </body>
     </html>
   );

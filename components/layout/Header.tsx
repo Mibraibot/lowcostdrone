@@ -2,13 +2,13 @@ import React from "react";
 
 export default function Header() {
   return (
-    <header className="w-full h-16 bg-slate-900 border-b border-slate-800 flex items-center px-6">
+    <header className="w-full h-12 bg-slate-900 border-b border-slate-800 flex items-center px-6">
       {/* LEFT */}
       <div className="flex items-center gap-3 w-1/3">
         <div className="w-8 h-8 rounded bg-sky-500 flex items-center justify-center font-bold text-white">
           ✈️
         </div>
-        <span className="text-white font-semibold text-lg">
+        <span className="text-white font-semibold text-base">
           AeroGuard Monitoring System
         </span>
       </div>
