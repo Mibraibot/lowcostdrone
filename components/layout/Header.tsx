@@ -9,7 +9,7 @@ export default function Header() {
           ✈️
         </div>
         <span className="text-white font-semibold text-base">
-          AeroGuard Monitoring System
+          LCDD DETECTION INTERFACE
         </span>
       </div>
 
