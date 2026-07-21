@@ -3,7 +3,7 @@ interface Props {
   onChange: (tab: string) => void;
 }
 
-const tabs = ["overview", "alerts", "settings"];
+const tabs = ["overview", "alerts", "qos", "settings"];
 
 export default function DashboardNavbar({ active, onChange }: Props) {
   return (
@@ -19,7 +19,7 @@ export default function DashboardNavbar({ active, onChange }: Props) {
                 : "text-slate-400 hover:text-white"
             }`}
         >
-          {tab === "alerts" ? "Alerts Detail" : tab}
+          {tab === "alerts" ? "Alerts Detail" : tab === "qos" ? "QoS" : tab}
         </button>
       ))}
     </div>

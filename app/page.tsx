@@ -5,6 +5,7 @@ import DashboardStats from "@/components/sections/DashboardStats";
 import DashboardNavbar from "@/components/sections/DashboardNavbar";
 import OverviewPanel from "@/components/sections/panels/OverviewPanel";
 import AlertsPanel from "@/components/sections/panels/AlertsPanel";
+import QosPanel from "@/components/sections/panels/QosPanel";
 import SettingsPanel from "@/components/sections/panels/SettingsPanel";
 import "leaflet/dist/leaflet.css";
 
@@ -19,6 +20,7 @@ export default function Home() {
 
       {activeTab === "overview" && <OverviewPanel />}
       {activeTab === "alerts" && <AlertsPanel />}
+      {activeTab === "qos" && <QosPanel />}
       {activeTab === "settings" && <SettingsPanel />}
     </div>
   );
