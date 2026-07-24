@@ -6,17 +6,19 @@
 export type NodeRawData = {
   data_hex: string;
   node: string;
-  prediction: string; // "Aman" | "Drone Terdeteksi"
+  detection?: string; // "Aman" | "Drone Terdeteksi"
+  prediction?: string; // legacy (pra-rename), dibaca sbg fallback utk data lama
   rssi: number;
   snr: number;
   timestamp: string;
 };
 
-/** Processed prediction data per node */
+/** Processed detection data per node */
 export type TimeseriesData = {
+  prediction_label: string;
   node: string;
   isDrone: boolean;
-  prediction_label: string;
+  detection_label: string;
   timestamp: string;
   original_data: NodeRawData;
 };

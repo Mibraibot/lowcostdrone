@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { ref, onValue } from "firebase/database";
 import { db } from "@/lib/firebase";
 import type { TimeseriesData, NodeRawData } from "@/types/drone.types";
-import { parsePrediction } from "@/utils/prediction";
+import { parseDetection } from "@/utils/detection";
 
 export function useTimeseries() {
-  const [latestPredictions, setLatestPredictions] = useState<Record<string, TimeseriesData>>({});
+  const [latestDetections, setLatestDetections] = useState<Record<string, TimeseriesData>>({});
   const [alerts, setAlerts] = useState<TimeseriesData[]>([]);
   const [connected, setConnected] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -27,26 +27,27 @@ export function useTimeseries() {
       if (snapshot.exists()) {
         const data = snapshot.val();
 
-        const newPredictions: Record<string, TimeseriesData> = {};
+        const newDetections: Record<string, TimeseriesData> = {};
         const newAlerts: TimeseriesData[] = [];
 
         Object.entries(data).forEach(([nodeKey, nodeData]: [string, any]) => {
           const raw = nodeData as NodeRawData;
-          const { isDrone, label } = parsePrediction(raw.prediction);
+          // `detection` = key baru; fallback ke `prediction` untuk data lama
+          const { isDrone, label } = parseDetection(raw.detection ?? raw.prediction ?? "");
 
           const entry: TimeseriesData = {
             node: raw.node || nodeKey,
             isDrone,
-            prediction_label: label,
+            detection_label: label,
             timestamp: raw.timestamp || new Date().toISOString(),
             original_data: raw,
           };
 
-          newPredictions[nodeKey] = entry;
+          newDetections[nodeKey] = entry;
           newAlerts.push(entry);
         });
 
-        setLatestPredictions(newPredictions);
+        setLatestDetections(newDetections);
 
         setAlerts((prev) => {
           const combined = [...newAlerts, ...prev];
@@ -57,7 +58,7 @@ export function useTimeseries() {
           return unique.slice(0, 20);
         });
       } else {
-        setLatestPredictions({});
+        setLatestDetections({});
       }
     });
 
@@ -67,5 +68,5 @@ export function useTimeseries() {
     };
   }, []);
 
-  return { latestPredictions, alerts, connected, now };
+  return { latestDetections, alerts, connected, now };
 }

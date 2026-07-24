@@ -1,14 +1,14 @@
 // ============================================================
-// Prediction parsing & RF status computation
+// Detection parsing & RF status computation
 // ============================================================
 
 import type { RfStatus, TimeseriesData } from "@/types/drone.types";
 
 /**
- * Parse raw prediction string from Firebase into a structured boolean isDrone + label.
+ * Parse raw detection string from Firebase into a structured boolean isDrone + label.
  */
-export function parsePrediction(rawPrediction: string): { isDrone: boolean; label: string } {
-  const lower = (rawPrediction || "").toLowerCase();
+export function parseDetection(rawDetection: string): { isDrone: boolean; label: string } {
+  const lower = (rawDetection || "").toLowerCase();
 
   // If the status is "drone terdeteksi"
   if (lower.includes("drone") || lower.includes("bahaya") || lower.includes("critical")) {
@@ -19,19 +19,19 @@ export function parsePrediction(rawPrediction: string): { isDrone: boolean; labe
 }
 
 /**
- * Compute the overall RF status from all current predictions.
+ * Compute the overall RF status from all current detections.
  * Returns the worst-case status and a rough signal count derived from RSSI.
  */
 export function computeRfStatus(
-  predictions: Record<string, TimeseriesData>
+  detections: Record<string, TimeseriesData>
 ): { status: RfStatus; signalCount: number } {
   let anyDrone = false;
   let signals = 0;
 
-  Object.values(predictions).forEach((pred) => {
-    if (pred?.isDrone) anyDrone = true;
-    if (pred?.original_data?.rssi) {
-      signals += Math.abs(pred.original_data.rssi) / 10;
+  Object.values(detections).forEach((det) => {
+    if (det?.isDrone) anyDrone = true;
+    if (det?.original_data?.rssi) {
+      signals += Math.abs(det.original_data.rssi) / 10;
     }
   });
 

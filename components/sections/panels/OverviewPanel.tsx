@@ -6,7 +6,7 @@ import { threatConfig, ThreatLevel } from "@/utils/threat";
 import { isNodeConnected } from "@/utils/connection";
 
 export default function OverviewPanel() {
-  const { latestPredictions, now } = useTimeseries();
+  const { latestDetections, now } = useTimeseries();
 
   return (
     <div className="grid grid-cols-3 gap-4 flex-1 min-h-0">
@@ -26,14 +26,14 @@ export default function OverviewPanel() {
         </div>
 
         <ul className="space-y-3 text-sm overflow-y-auto flex-1 pr-1">
-          {Object.entries(latestPredictions).map(([nodeId, pred]) => {
-            const isDrone = pred?.isDrone || false;
-            const predLabel = pred?.prediction_label || "No Live Data";
+          {Object.entries(latestDetections).map(([nodeId, det]) => {
+            const isDrone = det?.isDrone || false;
+            const detectionLabel = det?.detection_label || "No Live Data";
             const threatLevel: ThreatLevel = isDrone ? 1 : 0;
             const config = threatConfig[threatLevel];
             if (!config) return null;
 
-            const connected = isNodeConnected(pred?.timestamp, now);
+            const connected = isNodeConnected(det?.timestamp, now);
 
             return (
               <li
@@ -47,11 +47,11 @@ export default function OverviewPanel() {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-slate-200 font-medium">
-                      {nodeId.toUpperCase()} — {predLabel}
+                      {nodeId.toUpperCase()} — {detectionLabel}
                     </p>
                     <p className="text-slate-400 text-xs">
-                      LoRa Comm Status — RSSI: {pred?.original_data?.rssi} · SNR:{" "}
-                      {pred?.original_data?.snr}
+                      LoRa Comm Status — RSSI: {det?.original_data?.rssi} · SNR:{" "}
+                      {det?.original_data?.snr}
                     </p>
                     <p className="text-[10px] mt-1">
                       <span className={connected ? "text-emerald-400" : "text-red-400"}>

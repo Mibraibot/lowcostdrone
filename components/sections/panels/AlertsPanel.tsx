@@ -25,7 +25,7 @@ export default function AlertsPanel() {
               <th className="text-left py-3 font-medium">Time</th>
               <th className="text-left py-3 font-medium">Node</th>
               <th className="text-left py-3 font-medium">Data Hex</th>
-              <th className="text-left py-3 font-medium">Prediction</th>
+              <th className="text-left py-3 font-medium">Deteksi</th>
               <th className="text-left py-3 font-medium">Status</th>
             </tr>
           </thead>
@@ -51,7 +51,7 @@ export default function AlertsPanel() {
                       ? String(alert.original_data.data_hex)
                       : "No Hex Data"}
                   </td>
-                  <td className="py-3 text-slate-200">{alert.prediction_label}</td>
+                  <td className="py-3 text-slate-200">{alert.detection_label}</td>
                   <td className="py-3">
                     {alert.isDrone ? (
                       <span className="bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-[9px] font-bold border border-red-500/30 animate-pulse">

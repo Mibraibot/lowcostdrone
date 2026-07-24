@@ -105,7 +105,7 @@ const nodeCriticalIcon = L.icon({ ...iconDefaults, iconUrl: `${MARKER_BASE}/mark
 // ===============================
 export default function MapPanelClient() {
   const { gateway } = useGateway();
-  const { latestPredictions, now } = useTimeseries();
+  const { latestDetections, now } = useTimeseries();
 
   const center: [number, number] =
     gateway && !isNaN(Number(gateway.lat)) && !isNaN(Number(gateway.lon))
@@ -113,8 +113,8 @@ export default function MapPanelClient() {
       : [-6.9147, 107.6098];
 
   const isCritical = useMemo(() => {
-    return Object.values(latestPredictions).some((p) => p?.isDrone);
-  }, [latestPredictions]);
+   return Object.values(latestDetections).some((p) => p?.isDrone);
+}, [latestDetections]);
 
   const nodesCenter = useMemo(() => {
     if (!gateway?.nodes) return center;
@@ -202,10 +202,10 @@ export default function MapPanelClient() {
                 if (isNaN(lat) || isNaN(lon)) return null;
 
                 const position: [number, number] = [lat, lon];
-                const pred = latestPredictions[nodeKey];
-                const label = pred?.prediction_label || "Waiting for Live Data...";
-                const isDrone = pred?.isDrone || false;
-                const connected = isNodeConnected(pred?.timestamp, now);
+                const det = latestDetections[nodeKey];
+                const label = det?.detection_label || "Waiting for Live Data...";
+                const isDrone = det?.isDrone || false;
+                const connected = isNodeConnected(det?.timestamp, now);
                 const currentIcon = isDrone ? nodeCriticalIcon : nodeSafeIcon;
 
                 return (
@@ -220,9 +220,9 @@ export default function MapPanelClient() {
                         </span>
                         <br />
                         Pos: {lat.toFixed(4)}, {lon.toFixed(4)}
-                        {pred && (
+                        {det && (
                           <div className="mt-1 text-[10px] text-cyan-600 font-medium">
-                            (Live: {new Date(pred.timestamp).toLocaleTimeString()})
+                            (Live: {new Date(det.timestamp).toLocaleTimeString()})
                           </div>
                         )}
                       </div>

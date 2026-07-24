@@ -5,14 +5,14 @@ import React, { useEffect, useMemo, useState } from "react";
 
 import { useTimeseries } from "@/hooks/useTimeseries";
 import { useGateway } from "@/hooks/useGateway";
-import { computeRfStatus } from "@/utils/prediction";
+import { computeRfStatus } from "@/utils/detection";
 import { rfStatusConfig } from "@/utils/threat";
 import { isNodeConnected } from "@/utils/connection";
 import HoverableLatLon from "@/components/ui/HoverableLatLon";
 
 export default function DashboardStats() {
   const [mounted, setMounted] = useState(false);
-  const { latestPredictions, now } = useTimeseries();
+  const { latestDetections, now } = useTimeseries();
   const { gateway } = useGateway();
 
   useEffect(() => {
@@ -21,8 +21,8 @@ export default function DashboardStats() {
   }, []);
 
   const { status: rfStatus, signalCount } = useMemo(
-    () => computeRfStatus(latestPredictions),
-    [latestPredictions]
+    () => computeRfStatus(latestDetections),
+    [latestDetections]
   );
 
   const currentStatus = rfStatusConfig[rfStatus];
@@ -81,7 +81,7 @@ export default function DashboardStats() {
             <Wifi className="w-3 h-3 text-emerald-400 mt-[1px]" />
             <div className="leading-tight">
               <div className="text-slate-500">Network</div>
-              <div className="text-slate-300 font-semibold truncate">PLOPD_GATEWAY</div>
+              <div className="text-slate-300 font-semibold truncate">LCDD_GATEWAY</div>
             </div>
           </div>
         </div>
@@ -101,12 +101,12 @@ export default function DashboardStats() {
             Node Connection
           </div>
           <div className="text-lg font-bold leading-none text-slate-200 mb-1">
-            {Object.keys(latestPredictions).length} / 3
+            {Object.keys(latestDetections).length} / 3
           </div>
           <div className="space-y-[3px]">
-            {Object.entries(latestPredictions).map(([nodeKey, pred]) => {
-              const label = pred?.prediction_label || "No Prediction";
-              const connected = isNodeConnected(pred?.timestamp, now);
+            {Object.entries(latestDetections).map(([nodeKey, det]) => {
+              const label = det?.detection_label || "No Detection";
+              const connected = isNodeConnected(det?.timestamp, now);
               const statusColor = connected ? "emerald" : "red";
               const statusText = connected ? "CONNECTED" : "DISCONNECTED";
 
